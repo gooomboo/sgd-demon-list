@@ -23,8 +23,8 @@
     }
   ],
   "moderators": [
-    { "name": "gooomboo", "role": "List Leader" },
-    { "name": "username", "role": "List Moderator" },
-    { "name": "username", "role": "List Moderator" }
+    { "name": "goomboo", "role": "List Leader" },
+    { "name": "username", "role": "Moderator" },
+    { "name": "username", "role": "Moderator" }
   ]
 }
