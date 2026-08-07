@@ -1,30 +1,31 @@
-{
-  "levels": [
-    {
-      "name": "Society",
-      "creator": "Neomarbilan",
-      "verifier": "[WBT] wPopoff",
-      "image": "society.png",
-      "reqPercent": 66,
-      "records": [
-        { "player": "[WBT] wPopoff", "percent": 100, "enjoyment": 8, "link": "" },
-        { "player": "[TCD] Trick", "percent": 100, "enjoyment": 9, "link": "" }
-      ]
-    },
-    {
-      "name": "Thinking Space II",
-      "creator": "CairoX",
-      "verifier": "CairoX",
-      "image": "thinking-space-2.png",
-      "reqPercent": 79,
-      "records": [
-        { "player": "Zoink", "percent": 100, "enjoyment": 4, "link": "" }
-      ]
-    }
-  ],
-  "moderators": [
-    { "name": "goomboo", "role": "List Leader" },
-    { "name": "username", "role": "Moderator" },
-    { "name": "username", "role": "Moderator" }
-  ]
-}
+[
+  {
+    "name": "Society",
+    "publisher": "Neomarbilan",
+    "verifier": "[WBT] wPopoff",
+    "creators": "Neomarbilan and more",
+    "length": "2m:12s",
+    "difficulty": "Extreme Demon",
+    "engine": "2.2",
+    "reqPercent": 66,
+    "image": "https://i.ytimg.com/vi/613Y-2m96B8/maxresdefault.jpg",
+    "records": [
+      { "player": "[WBT] wPopoff", "percent": 100, "enjoyment": 8, "link": "#" },
+      { "player": "[TCD] Trick", "percent": 100, "enjoyment": 9, "link": "#" }
+    ]
+  },
+  {
+    "name": "Thinking Space II",
+    "publisher": "CairoX",
+    "verifier": "CairoX",
+    "creators": "CairoX",
+    "length": "2m:30s",
+    "difficulty": "Extreme Demon",
+    "engine": "2.1",
+    "reqPercent": 79,
+    "image": "https://i.ytimg.com/vi/D1B-kX7pS8A/maxresdefault.jpg",
+    "records": [
+      { "player": "Zoink", "percent": 100, "enjoyment": 4, "link": "#" }
+    ]
+  }
+]
