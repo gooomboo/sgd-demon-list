@@ -1,2 +1,2 @@
-# sgd-demon-list
+# sgd-demon-list-revamped
 My demon list 
