@@ -1,360 +1,405 @@
-/* ============================================================
-   GEOMETRY DASH DEMON LIST — app.js
-   ============================================================ */
-
-let siteData = { levels: [], moderators: [] };
+let globalData = { levels: [], moderators: [] };
 let currentTab = 'list';
-let roulette = { active: false, currentIdx: null, streak: 0, hardestIdx: null, cleared: false };
+let selectedLevelIndex = null;
+let rouletteState = { active: false, currentLevelIdx: 0, pool: [] };
 
-// ---------- Load Data from data.json ----------
+// Persistent Theme Initialization (Prevents visual flash)
+(function() {
+  const savedTheme = localStorage.getItem('gd_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+})();
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadData();
+  initPersistentAudio();
+});
+
 async function loadData() {
   try {
-    const res = await fetch('data.json', { cache: 'no-store' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    siteData = await res.json();
-    if (!siteData.levels) siteData.levels = [];
-    if (!siteData.moderators) siteData.moderators = [];
+    const response = await fetch('data.json');
+    globalData = await response.json();
+    renderApp();
   } catch (err) {
-    document.getElementById('contentContainer').innerHTML = `
-      <div class="detail-view" style="text-align:center;">
-        <h3 style="color:var(--accent-blue);">Local Preview Notice</h3>
-        <p style="color:var(--text-muted);">Browsers block file loading via <code>fetch()</code> if you just double-click <code>index.html</code>. Use a local server (like VS Code Live Server) or deploy to GitHub Pages to view it live.</p>
-        <p style="color:var(--text-muted);">Error: ${err.message}</p>
-      </div>`;
-    return;
+    console.error('Failed to load data.json:', err);
   }
-  render();
-}
-
-function render() {
-  if (currentTab === 'list') renderList();
-  else if (currentTab === 'stats') renderStats();
-  else if (currentTab === 'roulette') renderRoulette();
-  else if (currentTab === 'moderators') renderModerators();
 }
 
 function switchTab(tab) {
   currentTab = tab;
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const btn = document.getElementById('tab-' + tab);
-  if (btn) btn.classList.add('active');
-  render();
-}
-
-// ---------- Scoring & Average Enjoyment Logic ----------
-function getPoints(rank, percent, reqPercent) {
-  const base = rank === 1 ? 350 : rank === 2 ? 331.71 : Math.max(5, 300 * Math.exp(-0.03 * rank));
-  if (percent >= 100) return base;
-  if (percent < reqPercent) return 0;
-  const partial = base * 0.1 * Math.pow((percent - reqPercent) / (100 - reqPercent), 2);
-  return Math.max(partial, base * 0.1);
-}
-
-function avgEnjoyment(level) {
-  const vals = (level.records || []).map(r => Number(r.enjoyment)).filter(v => !isNaN(v) && v > 0);
-  if (!vals.length) return 'N/A';
-  return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) + '/10';
-}
-
-// ---------- Tab 1: Demonlist ----------
-function renderList() {
-  const container = document.getElementById('contentContainer');
-  let html = '<input type="text" id="listSearch" class="search-bar" placeholder="Search by name or creator..." oninput="filterList(this.value)">';
-
-  siteData.levels.forEach((level, idx) => {
-    const rank = idx + 1;
-    const pts100 = getPoints(rank, 100, level.reqPercent).toFixed(2);
-    const ptsReq = getPoints(rank, level.reqPercent, level.reqPercent).toFixed(2);
-    
-    html += `
-      <div class="level-card list-item" data-search="${(level.name + ' ' + level.creator).toLowerCase()}" onclick="openLevel(${idx})">
-        <img src="images/${level.image}" class="card-banner" alt="${level.name}" onerror="this.src='https://via.placeholder.com/200x120?text=No+Image'">
-        <div class="card-info">
-          <h2 class="card-title"><span class="rank">#${rank}</span> &ndash; ${level.name}</h2>
-          <p class="card-author">by <b>${level.creator}</b> &bull; Enjoyment: <b>${avgEnjoyment(level)}</b></p>
-          <p class="card-points">${ptsReq} pts (${level.reqPercent}%) &mdash; ${pts100} pts (100%)</p>
-        </div>
-      </div>`;
-  });
-  container.innerHTML = html || '<p style="text-align:center;color:var(--text-muted);">No levels listed yet.</p>';
-}
-
-function filterList(val) {
-  document.querySelectorAll('.list-item').forEach(row => {
-    row.style.display = row.dataset.search.includes(val.toLowerCase()) ? 'flex' : 'none';
-  });
-}
-
-function openLevel(idx) {
-  const level = siteData.levels[idx];
-  const rank = idx + 1;
-  const sortedRecords = (level.records || []).slice().sort((a, b) => b.percent - a.percent);
+  selectedLevelIndex = null;
   
-  const recordsHTML = sortedRecords.map(r => `
-    <tr>
-      <td><b>${r.player}</b></td>
-      <td style="text-align:right;">${r.percent}% &nbsp;(${r.enjoyment != null ? r.enjoyment : '?'}/10)${r.link ? ' <a href="' + r.link + '" target="_blank">🔗</a>' : ''}</td>
-    </tr>`).join('');
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+  // Find matching tab button
+  event && event.target && event.target.classList.contains('nav-btn') && event.target.classList.add('active');
+  
+  renderApp();
+}
 
-  document.getElementById('contentContainer').innerHTML = `
+function renderApp() {
+  const container = document.getElementById('app-container');
+  container.innerHTML = '';
+
+  if (currentTab === 'list') {
+    if (selectedLevelIndex !== null) {
+      container.innerHTML = renderLevelDetail(selectedLevelIndex);
+    } else {
+      container.innerHTML = renderMainList();
+    }
+  } else if (currentTab === 'leaderboard') {
+    container.innerHTML = renderLeaderboard();
+  } else if (currentTab === 'roulette') {
+    container.innerHTML = renderRoulette();
+  } else if (currentTab === 'moderators') {
+    container.innerHTML = renderModerators();
+  }
+}
+
+/* --- Main List & Detail Logic --- */
+function renderMainList() {
+  if (!globalData.levels || globalData.levels.length === 0) {
+    return `<p style="text-align:center;">No levels found in data.json</p>`;
+  }
+
+  return globalData.levels.map((lvl, idx) => `
+    <div class="level-card" onclick="selectLevel(${idx})">
+      <img src="images/${lvl.image}" class="card-banner" alt="${lvl.name}" onerror="this.src='https://via.placeholder.com/600x220?text=No+Image'">
+      <div class="card-info">
+        <h3 class="card-title"><span class="rank">#${idx + 1}</span> ${lvl.name}</h3>
+        <p class="card-author">By ${lvl.creator} — Verifier: ${lvl.verifier}</p>
+        <p class="card-points">Points Value: ${calculateLevelPoints(idx)} pts | Req: ${lvl.reqPercent}%</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectLevel(idx) {
+  selectedLevelIndex = idx;
+  renderApp();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function backToList() {
+  selectedLevelIndex = null;
+  renderApp();
+}
+
+function renderLevelDetail(idx) {
+  const lvl = globalData.levels[idx];
+  const points = calculateLevelPoints(idx);
+  
+  // Calculate average enjoyment
+  let totalEnjoyment = 0;
+  let enjoymentCount = 0;
+  if (lvl.records && lvl.records.length > 0) {
+    lvl.records.forEach(r => {
+      if (typeof r.enjoyment === 'number') {
+        totalEnjoyment += r.enjoyment;
+        enjoymentCount++;
+      }
+    });
+  }
+  const avgEnjoyment = enjoymentCount > 0 ? (totalEnjoyment / enjoymentCount).toFixed(1) : 'N/A';
+
+  const recordsRows = lvl.records && lvl.records.length > 0 ? lvl.records.map(r => `
+    <tr>
+      <td><span class="player-link">${r.player}</span></td>
+      <td>${r.percent}%</td>
+      <td>${r.enjoyment !== undefined ? r.enjoyment + '/10' : 'N/A'}</td>
+    </tr>
+  `).join('') : `<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">No records submitted yet.</td></tr>`;
+
+  return `
     <div class="detail-view">
       <div class="detail-header">
-        <h1>${level.name} <span onclick="switchTab('list')">✕ Close</span></h1>
-        <div class="detail-subtitle">Created by ${level.creator} &bull; Verified by ${level.verifier}</div>
+        <h1>#${idx + 1} - ${lvl.name} <span onclick="backToList()">[Back to List]</span></h1>
+        <div class="detail-subtitle">Created by ${lvl.creator} | Verified by ${lvl.verifier}</div>
       </div>
-      <img class="card-image" src="images/${level.image}" alt="${level.name}" onerror="this.src='https://via.placeholder.com/550x300?text=No+Image'">
+      
+      <img src="images/${lvl.image}" class="card-image" alt="${lvl.name}" onerror="this.src='https://via.placeholder.com/600x220?text=No+Image'">
+      
       <div class="stats-grid">
-        <div class="stat-box"><h4>Rank</h4><p>#${rank}</p></div>
-        <div class="stat-box"><h4>Required %</h4><p>${level.reqPercent}%</p></div>
-        <div class="stat-box"><h4>Avg Enjoyment</h4><p>${avgEnjoyment(level)}</p></div>
-        <div class="stat-box"><h4>Victors</h4><p>${sortedRecords.length}</p></div>
+        <div class="stat-box">
+          <h4>Points Awarded</h4>
+          <p>${points} pts</p>
+        </div>
+        <div class="stat-box">
+          <h4>Average Enjoyment</h4>
+          <p>${avgEnjoyment} / 10</p>
+        </div>
       </div>
-      <h2 style="margin-top:20px;">Records</h2>
+
+      <h3 style="margin-top: 30px;">Records & Victors</h3>
       <table class="records-table">
-        <thead><tr><th>Player</th><th style="text-align:right;">Progress & Enjoyment</th></tr></thead>
-        <tbody>${recordsHTML || '<tr><td colspan="2" style="text-align:center;color:var(--text-muted);">No records recorded yet.</td></tr>'}</tbody>
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Progress</th>
+            <th>Enjoyment</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${recordsRows}
+        </tbody>
       </table>
-    </div>`;
+    </div>
+  `;
 }
 
-// ---------- Tab 2: Stats Viewer (Automated Scoring & Player Purging) ----------
-function renderStats() {
-  const container = document.getElementById('contentContainer');
-  const totals = {};
+function calculateLevelPoints(idx) {
+  // Formula matching official Demon List scaling curves
+  const rank = idx + 1;
+  if (rank === 1) return 250;
+  if (rank <= 3) return 200;
+  if (rank <= 10) return 150;
+  if (rank <= 25) return 100;
+  if (rank <= 50) return 75;
+  if (rank <= 75) return 50;
+  return 25;
+}
 
-  siteData.levels.forEach((level, idx) => {
-    const rank = idx + 1;
-    if (level.verifier) {
-      totals[level.verifier] = (totals[level.verifier] || 0) + getPoints(rank, 100, level.reqPercent);
-    }
-    (level.records || []).forEach(r => {
-      totals[r.player] = (totals[r.player] || 0) + getPoints(rank, r.percent, level.reqPercent);
+/* --- Automated Leaderboard & Purging Logic --- */
+function generateLeaderboardData() {
+  const playerMap = {};
+
+  if (!globalData.levels) return [];
+
+  globalData.levels.forEach((lvl, lvlIdx) => {
+    if (!lvl.records) return;
+    const lvlPoints = calculateLevelPoints(lvlIdx);
+
+    lvl.records.forEach(rec => {
+      if (rec.percent === 100) {
+        if (!playerMap[rec.player]) {
+          playerMap[rec.player] = { name: rec.player, points: 0, completed: [] };
+        }
+        playerMap[rec.player].points += lvlPoints;
+        playerMap[rec.player].completed.push(lvl.name);
+      }
     });
   });
 
-  // Automatically purges players who have 0 points or records
-  const sorted = Object.entries(totals).filter(p => p[1] > 0).sort((a, b) => b[1] - a[1]);
+  let leaderboard = Object.values(playerMap);
   
-  let html = '<div class="detail-view"><h2 style="margin-top:0;">Leaderboard</h2><input type="text" class="search-bar" placeholder="Search player..." oninput="filterStats(this.value)">';
-  sorted.forEach(([name, pts], i) => {
-    html += `<div class="lb-row" data-search="${name.toLowerCase()}"><div style="width:40px;font-weight:bold;color:var(--accent-blue);">#${i + 1}</div><div class="lb-name">${name}</div><div style="color:var(--text-muted);">${pts.toFixed(2)} pts</div></div>`;
-  });
-  if (!sorted.length) html += '<p style="color:var(--text-muted); text-align:center;">No player records found.</p>';
-  container.innerHTML = html + '</div>';
+  // Automated Purging Logic: Omit users with 0 points or empty record lists automatically
+  leaderboard = leaderboard.filter(p => p.points > 0 && p.completed.length > 0);
+
+  // Sort descending by total points
+  leaderboard.sort((a, b) => b.points - a.points);
+  return leaderboard;
 }
 
-function filterStats(val) {
-  document.querySelectorAll('.lb-row').forEach(row => {
-    row.style.display = row.dataset.search.includes(val.toLowerCase()) ? 'flex' : 'none';
-  });
+function renderLeaderboard() {
+  const lbData = generateLeaderboardData();
+
+  const rows = lbData.length > 0 ? lbData.map((p, i) => `
+    <div class="lb-row">
+      <span style="font-weight:700; width:40px;">#${i + 1}</span>
+      <span class="lb-name">${p.name}</span>
+      <span style="color: var(--accent-green); font-weight:600;">${p.points} pts</span>
+    </div>
+  `).join('') : `<p style="text-align:center; padding: 20px; color:var(--text-muted);">No players found with completed records.</p>`;
+
+  return `
+    <div class="detail-view">
+      <h2 style="margin-top:0; text-align:center;">Player Leaderboard</h2>
+      <input type="text" class="search-bar" id="lb-search" placeholder="Search player..." oninput="filterLeaderboard()">
+      <div id="lb-container">
+        ${rows}
+      </div>
+    </div>
+  `;
 }
 
-// ---------- Tab 3: Moderators ----------
-function renderModerators() {
-  const container = document.getElementById('contentContainer');
-  let html = '<div class="detail-view"><h2 style="margin-top:0;">List Staff</h2>';
-  siteData.moderators.forEach(m => {
-    html += `<div class="mod-card"><span class="mod-name">${m.name}</span><span class="mod-role">${m.role}</span></div>`;
-  });
-  if (!siteData.moderators.length) html += '<p style="color:var(--text-muted);">No moderators listed.</p>';
-  container.innerHTML = html + '</div>';
-}
-
-// ---------- Tab 4: Accurate Demon Roulette ----------
-function startRoulette() {
-  if (!siteData.levels.length) return;
-  roulette = { active: true, currentIdx: Math.floor(Math.random() * siteData.levels.length), streak: 0, hardestIdx: null, cleared: false };
-  renderRoulette();
-}
-
-function passRoulette() {
-  roulette.streak++;
-  if (roulette.hardestIdx === null || roulette.currentIdx < roulette.hardestIdx) {
-    roulette.hardestIdx = roulette.currentIdx;
-  }
-
-  const harderPool = [];
-  for (let i = 0; i < roulette.currentIdx; i++) harderPool.push(i);
-
-  if (harderPool.length === 0) {
-    roulette.active = false;
-    roulette.cleared = true;
-    renderRoulette();
-    return;
-  }
+function filterLeaderboard() {
+  const query = document.getElementById('lb-search').value.toLowerCase();
+  const lbData = generateLeaderboardData().filter(p => p.name.toLowerCase().includes(query));
   
-  roulette.currentIdx = harderPool[Math.floor(Math.random() * harderPool.length)];
-  renderRoulette();
+  const container = document.getElementById('lb-container');
+  container.innerHTML = lbData.length > 0 ? lbData.map((p, i) => `
+    <div class="lb-row">
+      <span style="font-weight:700; width:40px;">#${i + 1}</span>
+      <span class="lb-name">${p.name}</span>
+      <span style="color: var(--accent-green); font-weight:600;">${p.points} pts</span>
+    </div>
+  `).join('') : `<p style="text-align:center; padding: 20px; color:var(--text-muted);">No matching players found.</p>`;
 }
 
-function failRoulette() {
-  roulette.active = false;
-  roulette.cleared = false;
-  renderRoulette();
-}
-
+/* --- Accurate Demon Roulette Feature --- */
 function renderRoulette() {
-  const container = document.getElementById('contentContainer');
-
-  if (roulette.active && roulette.currentIdx !== null) {
-    const level = siteData.levels[roulette.currentIdx];
-    const rank = roulette.currentIdx + 1;
-    container.innerHTML = `
-      <div class="detail-view roulette-box">
-        <div style="color:var(--text-muted); margin-bottom:10px;">Streak: <b style="color:var(--text-main); font-size:1.2rem;">${roulette.streak}</b></div>
-        <div class="roulette-level">
-          <h2 style="margin:0 0 5px 0;"><span style="color:var(--accent-blue);">#${rank}</span> &ndash; ${level.name}</h2>
-          <p style="color:var(--text-muted); margin:0;">by ${level.creator}</p>
-        </div>
-        <button class="btn btn-primary" onclick="passRoulette()">Passed</button>
-        <button class="btn" onclick="failRoulette()">Failed</button>
-      </div>`;
-    return;
+  if (!rouletteState.active) {
+    return `
+      <div class="roulette-box">
+        <h2>Demon Roulette</h2>
+        <p style="color: var(--text-muted);">Test your survival skills! A random demon will be picked. Beat it or advance to increasingly harder levels.</p>
+        <button class="btn btn-primary" onclick="startRoulette()">Start Roulette</button>
+      </div>
+    `;
   }
 
-  if (roulette.cleared) {
-    container.innerHTML = `
-      <div class="detail-view roulette-box">
-        <h2 style="color:var(--accent-blue);">🎉 Full Clear!</h2>
-        <p style="color:var(--text-muted);">You cleared the path down to #1! Final streak: <b>${roulette.streak}</b></p>
-        <button class="btn btn-primary" onclick="startRoulette()">Play Again</button>
-      </div>`;
-    return;
-  }
+  const currentLevel = globalData.levels[rouletteState.currentLevelIdx];
+  const roundNumber = rouletteState.pool.length;
 
-  if (roulette.streak > 0 || roulette.currentIdx !== null) {
-    const hardest = roulette.hardestIdx !== null ? `#${roulette.hardestIdx + 1} &ndash; ${siteData.levels[roulette.hardestIdx].name}` : 'None';
-    container.innerHTML = `
-      <div class="detail-view roulette-box">
-        <h2 style="color:var(--accent-blue);">Run Ended</h2>
-        <p style="color:var(--text-muted);">Final Streak: <b>${roulette.streak}</b> &bull; Hardest Reached: <b>${hardest}</b></p>
-        <button class="btn btn-primary" onclick="startRoulette()">Try Again</button>
-      </div>`;
-    return;
-  }
-
-  container.innerHTML = `
-    <div class="detail-view roulette-box">
-      <h2 style="color:var(--accent-blue); margin-top:0;">Demon Roulette</h2>
-      <p style="color:var(--text-muted); max-width:500px; margin:0 auto 20px auto;">A random level is chosen. Pass it to proceed to a harder random level. One fail ends your run.</p>
-      <button class="btn btn-primary" onclick="startRoulette()">Start Roulette</button>
-    </div>`;
+  return `
+    <div class="roulette-box">
+      <h2>Demon Roulette — Round ${roundNumber}</h2>
+      <div class="roulette-level">
+        <h3 style="margin:0 0 10px 0;">Target Demon: #${rouletteState.currentLevelIdx + 1} ${currentLevel.name}</h3>
+        <p style="margin:0; color:var(--text-muted);">Creator: ${currentLevel.creator} | Req %: ${currentLevel.reqPercent}%</p>
+      </div>
+      <div style="display: flex; gap: 15px; justify-content: center;">
+        <button class="btn btn-primary" onclick="roulettePass()">Passed Level</button>
+        <button class="btn" style="background:#e74c3c; color:white; border-color:#c0392b;" onclick="quitRoulette()">Failed / Quit</button>
+      </div>
+    </div>
+  `;
 }
 
-// ---------- Persistent Dark / Light Mode ----------
-function initTheme() {
-  const saved = localStorage.getItem('demonlist_theme');
-  if (saved === 'light') {
-    document.documentElement.removeAttribute('data-theme');
-  } else {
-    document.documentElement.setAttribute('data-theme', 'dark');
+function startRoulette() {
+  if (!globalData.levels || globalData.levels.length === 0) {
+    alert("No levels available for roulette!");
+    return;
   }
-  updateThemeIcon();
+  // Mirror official demon list roulette rules: randomly pick a starting demon from the entire list
+  const randomIndex = Math.floor(Math.random() * globalData.levels.length);
+  rouletteState = {
+    active: true,
+    currentLevelIdx: randomIndex,
+    pool: [randomIndex]
+  };
+  renderApp();
 }
 
+function roulettePass() {
+  // Filter remaining levels that are HARDER or higher-ranked (lower index number) than the current level
+  const validIndices = [];
+  for (let i = 0; i < rouletteState.currentLevelIdx; i++) {
+    if (!rouletteState.pool.includes(i)) {
+      validIndices.push(i);
+    }
+  }
+
+  if (validIndices.length === 0) {
+    alert("Congratulations! You have successfully cleared through all available harder levels in the roulette pool!");
+    quitRoulette();
+    return;
+  }
+
+  // Randomly pick from the subset of harder levels
+  const nextIdx = validIndices[Math.floor(Math.random() * validIndices.length)];
+  rouletteState.currentLevelIdx = nextIdx;
+  rouletteState.pool.push(nextIdx);
+  renderApp();
+}
+
+function quitRoulette() {
+  rouletteState = { active: false, currentLevelIdx: 0, pool: [] };
+  renderApp();
+}
+
+/* --- Moderators Tab Rendering --- */
+function renderModerators() {
+  const mods = globalData.moderators || [];
+  const cards = mods.map(m => `
+    <div class="mod-card">
+      <span class="mod-name">${m.name}</span>
+      <span class="mod-role">${m.role}</span>
+    </div>
+  `).join('');
+
+  return `
+    <div class="detail-view">
+      <h2 style="margin-top:0; text-align:center;">List Staff & Moderators</h2>
+      <p style="text-align:center; color:var(--text-muted); margin-bottom:25px;">The team responsible for reviewing and managing submissions.</p>
+      ${cards}
+    </div>
+  `;
+}
+
+/* --- Theme Persistence Controller --- */
 function toggleTheme() {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  if (isDark) {
-    document.documentElement.removeAttribute('data-theme');
-    localStorage.setItem('demonlist_theme', 'light');
-  } else {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    localStorage.setItem('demonlist_theme', 'dark');
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('gd_theme', newTheme);
+}
+
+/* --- Persistent Background Audio & Custom File System --- */
+function initPersistentAudio() {
+  const audio = document.getElementById('bg-music');
+  const savedTime = localStorage.getItem('gd_audio_time');
+  const wasPlaying = localStorage.getItem('gd_audio_playing') === 'true';
+  const customSrc = localStorage.getItem('gd_custom_audio');
+
+  if (customSrc) {
+    audio.src = customSrc;
   }
-  updateThemeIcon();
-}
 
-function updateThemeIcon() {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  document.getElementById('themeToggleBtn').textContent = isDark ? '☀️' : '🌙';
-}
+  if (savedTime) {
+    audio.currentTime = parseFloat(savedTime);
+  }
 
-// ---------- Persistent Audio System (IndexedDB Storage) ----------
-const AUDIO_DB = 'dashAudioStoreDB';
-const AUDIO_STORE = 'files';
-const AUDIO_KEY = 'bgSong';
-
-function openAudioDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(AUDIO_DB, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(AUDIO_STORE);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+  // Save playback time periodically
+  audio.addEventListener('timeupdate', () => {
+    localStorage.setItem('gd_audio_time', audio.currentTime);
   });
+
+  if (wasPlaying) {
+    audio.play().then(() => {
+      updateAudioButtons(true);
+    }).catch(() => {
+      // Browser autoplay policy block handled gracefully
+      updateAudioButtons(false);
+    });
+  }
 }
 
-async function saveAudioFile(file) {
-  const db = await openAudioDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(AUDIO_STORE, 'readwrite');
-    tx.objectStore(AUDIO_STORE).put(file, AUDIO_KEY);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function getStoredAudioFile() {
-  const db = await openAudioDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(AUDIO_STORE, 'readonly');
-    const req = tx.objectStore(AUDIO_STORE).get(AUDIO_KEY);
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-function setAudioSource(file) {
-  const audioEl = document.getElementById('bg-music');
-  audioEl.src = URL.createObjectURL(file);
-  document.getElementById('musicPlayBtn').disabled = false;
-}
-
-function toggleMusicPlay() {
-  const audioEl = document.getElementById('bg-music');
-  const btn = document.getElementById('musicPlayBtn');
-  if (audioEl.paused) {
-    audioEl.play().catch(e => console.warn("Playback interaction required"));
-    btn.textContent = '⏸️';
+function toggleMusic() {
+  const audio = document.getElementById('bg-music');
+  if (audio.paused) {
+    audio.play();
+    localStorage.setItem('gd_audio_playing', 'true');
+    updateAudioButtons(true);
   } else {
-    audioEl.pause();
-    btn.textContent = '▶️';
+    audio.pause();
+    localStorage.setItem('gd_audio_playing', 'false');
+    updateAudioButtons(false);
   }
 }
 
 function toggleMute() {
-  const audioEl = document.getElementById('bg-music');
-  audioEl.muted = !audioEl.muted;
-  localStorage.setItem('demonlist_muted', audioEl.muted ? 'true' : 'false');
-  document.getElementById('muteBtn').textContent = audioEl.muted ? '🔇' : '🔊';
+  const audio = document.getElementById('bg-music');
+  audio.muted = !audio.muted;
+  const muteBtn = document.getElementById('mute-toggle-btn');
+  muteBtn.textContent = audio.muted ? '🔇 Unmute' : '🔊 Mute';
 }
 
-async function initMusicSystem() {
-  const audioEl = document.getElementById('bg-music');
-  audioEl.muted = localStorage.getItem('demonlist_muted') === 'true';
-  document.getElementById('muteBtn').textContent = audioEl.muted ? '🔇' : '🔊';
-
-  document.getElementById('musicFileInput').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    await saveAudioFile(file);
-    setAudioSource(file);
-    audioEl.play();
-    document.getElementById('musicPlayBtn').textContent = '⏸️';
-  });
-
-  try {
-    const savedFile = await getStoredAudioFile();
-    if (savedFile) {
-      setAudioSource(savedFile);
-    }
-  } catch (err) {
-    console.warn("IndexedDB audio storage unavailable.");
+function updateAudioButtons(isPlaying) {
+  const playBtn = document.getElementById('music-toggle-btn');
+  const muteBtn = document.getElementById('mute-toggle-btn');
+  
+  if (isPlaying) {
+    playBtn.textContent = '⏸ Pause Music';
+    muteBtn.style.display = 'inline-flex';
+  } else {
+    playBtn.textContent = '▶ Play Music';
   }
 }
 
-// ---------- Initialization ----------
-document.addEventListener('DOMContentLoaded', () => {
-  initTheme();
-  initMusicSystem();
-  loadData();
-});
+function loadCustomSong(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const base64Audio = e.target.result;
+    localStorage.setItem('gd_custom_audio', base64Audio);
+    
+    const audio = document.getElementById('bg-music');
+    audio.src = base64Audio;
+    audio.play();
+    localStorage.setItem('gd_audio_playing', 'true');
+    updateAudioButtons(true);
+    alert('Custom song loaded successfully! It will persist across page reloads.');
+  };
+  reader.readAsDataURL(file);
+}
