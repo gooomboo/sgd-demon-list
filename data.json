@@ -1,30 +1,42 @@
 {
   "levels": [
     {
-      "name": "Society",
-      "creator": "Neomarbilan",
-      "verifier": "[WBT] wPopoff",
-      "image": "society.png",
-      "reqPercent": 66,
+      "name": "Tidal Wave",
+      "creator": "Onilink",
+      "verifier": "Zoink",
+      "reqPercent": 100,
+      "image": "tidal-wave.png",
       "records": [
-        { "player": "[WBT] wPopoff", "percent": 100, "enjoyment": 8, "link": "" },
-        { "player": "[TCD] Trick", "percent": 100, "enjoyment": 9, "link": "" }
+        { "player": "Trick", "percent": 100, "enjoyment": 8, "link": "https://youtube.com/..." },
+        { "player": "WPopoff", "percent": 100, "enjoyment": 9, "link": "https://youtube.com/..." }
       ]
     },
     {
-      "name": "Thinking Space II",
-      "creator": "CairoX",
-      "verifier": "CairoX",
-      "image": "thinking-space-2.png",
-      "reqPercent": 79,
+      "name": "Acheron",
+      "creator": "Riot and more",
+      "verifier": "Zoink",
+      "reqPercent": 66,
+      "image": "acheron.png",
       "records": [
-        { "player": "Zoink", "percent": 100, "enjoyment": 4, "link": "" }
+        { "player": "Trick", "percent": 100, "enjoyment": 7, "link": "https://youtube.com/..." },
+        { "player": "Doggie", "percent": 100, "enjoyment": 8, "link": "https://youtube.com/..." }
+      ]
+    },
+    {
+      "name": "Slaughterhouse",
+      "creator": "Icedcave and more",
+      "verifier": "SpaceUK (Hacked), Doggie (Legit)",
+      "reqPercent": 50,
+      "image": "slaughterhouse.png",
+      "records": [
+        { "player": "WPopoff", "percent": 100, "enjoyment": 6, "link": "https://youtube.com/..." },
+        { "player": "SomeoneElse", "percent": 75, "enjoyment": 5, "link": "https://youtube.com/..." }
       ]
     }
   ],
   "moderators": [
-    { "name": "goomboo", "role": "List Leader" },
-    { "name": "username", "role": "Moderator" },
-    { "name": "username", "role": "Moderator" }
+    { "name": "gooomboo", "role": "List Leader" },
+    { "name": "Username", "role": "List Moderator" },
+    { "name": "Username", "role": "List Helper" }
   ]
 }
