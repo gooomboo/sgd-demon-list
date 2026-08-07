@@ -3,38 +3,304 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Geometry Dash Demon List</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Demonlist</title>
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --card-bg: #ffffff;
+      --text-main: #333333;
+      --text-muted: #777777;
+      --border: #e0e0e0;
+      --accent-blue: #0078d7;
+      --hover-blue: #005a9e;
+      --header-bg: #ffffff;
+      --record-bg: #0088cc;
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --bg: #121212;
+      --card-bg: #1e1e1e;
+      --text-main: #e6e6e6;
+      --text-muted: #a3a3a3;
+      --border: #333333;
+      --accent-blue: #38bdf8;
+      --hover-blue: #0ea5e9;
+      --accent-green: #4ade80;
+      --header-bg: #1e1e1e;
+      --record-bg: #1560a8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-stack);
+      background-color: var(--bg);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .navbar {
+      width: 100%;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 15px 20px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .nav-btn {
+      background: none;
+      color: var(--text-muted);
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: color 0.2s;
+      font-family: inherit;
+    }
+
+    .nav-btn.active, .nav-btn:hover { color: var(--text-main); }
+    .nav-item-mod { display: none; }
+    body.mod-active .nav-item-mod { display: inline-block; color: #d9534f; }
+    .user-status { color: var(--accent-blue); font-weight: bold; margin-left: auto; display: flex; gap: 15px; align-items: center; }
+
+    .container { width: 100%; max-width: 900px; padding: 30px 15px; }
+
+    /* Cards & Lists */
+    .level-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .level-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .card-banner { width: 100%; height: 220px; object-fit: cover; border-bottom: 1px solid var(--border); }
+    .card-info { padding: 15px 20px; }
+    .card-title { font-size: 1.5rem; font-weight: 700; margin: 0 0 5px 0; color: var(--text-main); }
+    .card-author { font-size: 1rem; color: var(--text-main); margin: 0 0 5px 0; }
+    .card-points { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+    .mod-row { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+
+    .detail-view { display: none; background: var(--card-bg); padding: 30px; border: 1px dashed var(--border); border-radius: 4px; }
+    .detail-header { text-align: center; margin-bottom: 20px; }
+    .detail-header h1 { font-size: 2.2rem; margin: 0 0 10px 0; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--text-main); }
+    .detail-header h1 span { font-size: 1.2rem; color: var(--text-muted); cursor: pointer; }
+    .detail-subtitle { font-size: 1.05rem; font-weight: 600; line-height: 1.6; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+    .quote { font-style: italic; color: var(--text-muted); margin: 15px 0; }
+
+    .video-container { width: 100%; max-width: 600px; margin: 0 auto 30px auto; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+    .video-container img { width: 100%; display: block; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: center; margin-bottom: 30px; }
+    .stat-box h4 { margin: 0 0 5px 0; font-size: 1rem; color: var(--text-main); }
+    .stat-box p { margin: 0; font-size: 0.95rem; color: var(--text-muted); }
+
+    /* Tables */
+    .records-table, .catalog-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .records-table th, .catalog-table th { background: var(--record-bg); color: white; padding: 12px; text-align: left; }
+    .records-table td, .catalog-table td { padding: 12px; border-bottom: 1px solid var(--border); color: var(--text-main); }
+    .player-link { cursor: pointer; color: var(--accent-blue); text-decoration: none; border-bottom: 1px dotted var(--accent-blue); }
+
+    /* Leaderboard & Forms */
+    .search-bar { width: 100%; padding: 12px 15px; font-size: 1rem; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 20px; outline: none; font-family: inherit; background: var(--card-bg); color: var(--text-main); }
+    .lb-row { display: flex; align-items: center; padding: 12px 15px; border-bottom: 1px solid var(--border); background: var(--card-bg); color: var(--text-main); }
+    .lb-row:nth-child(even) { background: var(--bg); }
+    .lb-name { flex-grow: 1; cursor: pointer; font-weight: 600; border-bottom: 1px dotted transparent; margin-left: 15px; }
+    .lb-name:hover { border-bottom-color: var(--text-main); }
+
+    .btn { background: var(--card-bg); border: 1px solid var(--border); padding: 10px 20px; font-size: 1rem; font-weight: 600; cursor: pointer; border-radius: 4px; transition: 0.2s; font-family: inherit; color: var(--text-main); }
+    .btn:hover { background: var(--bg); }
+    .btn-primary { background: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+    .btn-primary:hover { background: var(--hover-blue); }
+    .btn-danger { background: #d9534f; color: white; border-color: #d9534f; }
+    .btn-success { background: #28a745; color: white; border-color: #28a745; }
+
+    .form-group { margin-bottom: 15px; text-align: left; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: var(--text-main); }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-family: inherit; background: var(--card-bg); color: var(--text-main); }
+
+    /* Modals */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+    .modal.active { display: flex; }
+    .modal-content { background: var(--card-bg); color: var(--text-main); padding: 30px; border-radius: 4px; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
+
+    .history-card { background: var(--bg); border: 1px solid var(--border); padding: 10px; margin-bottom: 10px; border-radius: 4px; font-size: 0.9rem; color: var(--text-main); }
+  </style>
 </head>
 <body>
 
-  <audio id="bg-music" loop></audio>
+  <div class="navbar" id="navbar">
+    <button class="nav-btn active" data-i18n="nav_list" onclick="switchTab('list')">Demonlist</button>
+    <button class="nav-btn" data-i18n="nav_stats" onclick="switchTab('leaderboard')">Stats Viewer</button>
+    <button class="nav-btn" data-i18n="nav_roulette" onclick="switchTab('roulette')">Roulette</button>
+    <button class="nav-btn" data-i18n="nav_submit" onclick="switchTab('submit')">Submit</button>
+    <button class="nav-btn" data-i18n="nav_catalog" onclick="switchTab('catalog')">Catalog</button>
+    <button class="nav-btn nav-item-mod" data-i18n="nav_audit" onclick="switchTab('audit')">Audit & Bans</button>
+    <button class="nav-btn nav-item-mod" data-i18n="nav_logout_staff" onclick="logoutStaff()">Logout Staff</button>
 
-  <header class="navbar">
-    <div class="nav-links">
-      <button class="nav-btn active" id="tab-list" onclick="switchTab('list')">Demonlist</button>
-      <button class="nav-btn" id="tab-stats" onclick="switchTab('stats')">Stats Viewer</button>
-      <button class="nav-btn" id="tab-roulette" onclick="switchTab('roulette')">Roulette</button>
-      <button class="nav-btn" id="tab-moderators" onclick="switchTab('moderators')">Moderators</button>
-      <a href="YOUR_GOOGLE_FORM_LINK_HERE" target="_blank" class="nav-btn submit-btn">Submit Record</a>
+    <select id="langSwitcher" class="nav-btn" style="border:1px solid var(--border); border-radius:4px; padding:4px 6px; cursor:pointer; text-transform:none; letter-spacing:normal; background:var(--card-bg); color:var(--text-main);" onchange="setLanguage(this.value)">
+      <option value="en">🇺🇸 EN</option>
+      <option value="de">🇩🇪 DE</option>
+      <option value="ru">🇷🇺 RU</option>
+      <option value="es">🇪🇸 ES</option>
+      <option value="ja">🇯🇵 JA</option>
+      <option value="ko">🇰🇷 KO</option>
+    </select>
+
+    <button class="btn" style="padding:4px 8px; font-size:0.85rem;" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌓 Theme</button>
+
+    <a href="https://discord.gg/yourinvite" target="_blank" id="discordBtn" title="Join our Discord" style="display:flex; align-items:center; padding:0 4px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#5865F2"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.076.076 0 0 0-.04.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.029 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.176 1.094 2.157 2.418 0 1.334-.955 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.176 1.094 2.157 2.418 0 1.334-.946 2.419-2.157 2.419z"/></svg>
+    </a>
+
+    <div class="user-status" id="userStatus">
+       <button class="nav-btn" onclick="openPlayerLogin()">Player Login</button>
     </div>
+  </div>
 
-    <div class="nav-controls">
-      <div class="audio-controls">
-        <label for="musicFileInput" class="music-upload-btn">🎵 Song File</label>
-        <input type="file" id="musicFileInput" accept="audio/*" style="display: none;">
-        <button id="musicPlayBtn" class="icon-btn" onclick="toggleMusicPlay()" disabled>▶️</button>
-        <button id="muteBtn" class="icon-btn" onclick="toggleMute()">🔊</button>
-      </div>
-      <button id="themeToggleBtn" class="icon-btn" onclick="toggleTheme()">🌙</button>
+  <div class="container">
+    <div id="contentContainer"></div>
+  </div>
+
+  <div class="modal" id="playerLoginModal">
+    <div class="modal-content">
+      <h2 style="margin-top:0;" data-i18n="login_title">Player Login / Register</h2>
+      <p style="color:var(--text-muted); font-size:0.85rem;">New accounts require an email and password to prevent spam and protect your account. You'll be added to the Stats Viewer automatically.</p>
+      <div class="form-group"><label data-i18n="username">Username</label><input type="text" id="playerName" placeholder="Enter username"></div>
+      <div class="form-group"><label data-i18n="email">Email (new accounts only)</label><input type="email" id="playerEmail" placeholder="Enter email"></div>
+      <div class="form-group"><label data-i18n="password">Password</label><input type="password" id="playerPass" placeholder="Enter password"></div>
+      <div class="form-group"><label data-i18n="country">Country (new accounts only)</label><select id="playerCountry"></select></div>
+      <button class="btn btn-primary" style="width:100%" onclick="loginPlayer()" data-i18n="signin">Sign In / Create Account</button>
+      <button class="btn" style="width:100%; margin-top:10px;" onclick="closeModal('playerLoginModal')" data-i18n="cancel">Cancel</button>
     </div>
-  </header>
+  </div>
 
-  <main class="container">
-    <div id="contentContainer">
-      </div>
-  </main>
+  <div class="modal" id="loginModal">
+    <div class="modal-content">
+      <h2 style="margin-top:0;">Staff Authentication</h2>
+      <div class="form-group"><label>Passcode</label><input type="password" id="modSecret" placeholder="Enter password"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="verifyMod()">Sign In</button>
+      <button class="btn" style="width:100%; margin-top:10px;" onclick="closeModal('loginModal')">Cancel</button>
+    </div>
+  </div>
 
-  <script src="app.js"></script>
-</body>
-</html>
+  <div class="modal" id="levelFormModal">
+    <div class="modal-content">
+      <h2 style="margin-top:0;" id="levelFormTitle">Add Level</h2>
+      <div class="form-group"><label>Insert at Rank #</label><input type="number" id="lfRank" min="1"></div>
+      <div class="form-group"><label>Name</label><input type="text" id="lfName"></div>
+      <div class="form-group"><label>Publisher</label><input type="text" id="lfPublisher"></div>
+      <div class="form-group"><label>Verifier</label><input type="text" id="lfVerifier"></div>
+      <div class="form-group"><label>Creators</label><input type="text" id="lfCreators"></div>
+      <div class="form-group"><label>Length</label><input type="text" id="lfLength" placeholder="e.g. 2m:12s"></div>
+      <div class="form-group"><label>Engine</label><input type="text" id="lfEngine" placeholder="e.g. 2.2"></div>
+      <div class="form-group"><label>Required %</label><input type="number" id="lfReq" min="1" max="100"></div>
+      <div class="form-group"><label>Thumbnail / Image URL</label><input type="text" id="lfImage"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="saveLevelForm()">Save Level</button>
+      <button class="btn" style="width:100%;margin-top:10px;" onclick="closeModal('levelFormModal')">Cancel</button>
+    </div>
+  </div>
+
+  <div class="modal" id="timeMachineModal">
+    <div class="modal-content">
+      <h2 style="margin-top:0;">🕐 Time Machine</h2>
+      <p style="color:var(--text-muted); font-size:0.85rem;">View the Demonlist as it looked at an earlier point. This only reflects changes made in this browser.</p>
+      <div class="form-group"><label>Destination</label><input type="datetime-local" id="tmDateInput"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="goToTime()">Go!</button>
+      <button class="btn" style="width:100%; margin-top:10px;" onclick="closeModal('timeMachineModal')">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    // --- Database Setup ---
+    const defaultDB = [
+      {
+        name: "Society", publisher: "Neomarbilan", verifier: "[WBT] wPopoff", creators: "Neomarbilan and more",
+        length: "2m:12s", difficulty: "Extreme Demon", engine: "2.2", reqPercent: 66,
+        image: "https://i.ytimg.com/vi/613Y-2m96B8/maxresdefault.jpg",
+        records: [
+          { player: "[WBT] wPopoff", percent: 100, enjoyment: 8, link: "#" },
+          { player: "[TCD] Trick", percent: 100, enjoyment: 9, link: "#" }
+        ]
+      },
+      {
+        name: "Thinking Space II", publisher: "CairoX", verifier: "CairoX", creators: "CairoX",
+        length: "2m:30s", difficulty: "Extreme Demon", engine: "2.1", reqPercent: 79,
+        image: "https://i.ytimg.com/vi/D1B-kX7pS8A/maxresdefault.jpg",
+        records: [ { player: "Zoink", percent: 100, enjoyment: 4, link: "#" } ]
+      }
+    ];
+
+    let db = JSON.parse(localStorage.getItem('ptr_db')) || defaultDB;
+    let bannedPlayers = JSON.parse(localStorage.getItem('ptr_bans')) || [];
+    let playerAccounts = JSON.parse(localStorage.getItem('ptr_users')) || {};
+    let submissions = JSON.parse(localStorage.getItem('ptr_subs')) || [];
+    let changelog = JSON.parse(localStorage.getItem('ptr_log')) || [{ date: new Date().toLocaleString(), isoDate: new Date().toISOString(), action: "System Initialization", type: "system", id: 0 }];
+    let dbHistory = JSON.parse(localStorage.getItem('ptr_history')) || [];
+    if (dbHistory.length === 0) {
+      dbHistory.push({ isoDate: (changelog[changelog.length-1] && changelog[changelog.length-1].isoDate) || new Date().toISOString(), db: JSON.parse(JSON.stringify(db)) });
+    }
+    let currentLang = localStorage.getItem('ptr_lang') || 'en';
+    let guidelinesText = localStorage.getItem('ptr_guidelines') || 'All records must include valid video proof (raw footage required). No cheats, hacks, speedhacks, or unauthorized game modifications are allowed. Submissions must stay within the frame-rate limits set by staff. Be respectful to other members of the community \u2014 harassment or cheating can result in a ban.';
+    let currentTheme = localStorage.getItem('ptr_theme') || 'light';
+
+    if (currentTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+
+    function toggleTheme() {
+      currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('ptr_theme', currentTheme);
+      if (currentTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+    }
+
+    let viewingHistory = null;
+    let statsViewMode = 'individual';
+    let isMod = false;
+    let loggedInUser = null;
+    let currentTab = 'list';
+    let editingLevelIdx = null;
+    let roulette = { active: false, summary: false, victory: false, level: null, req: 0, score: 0, hardestBeaten: null, endReason: null, endPercent: null };
+
+    const MOD_PASS_HASH = '0c9edd2025b926820718821ddd086cdc0b16a5bc989b6b6b238528b4aa6bddc2';
+
+    const countryList = [
+      { code:'us', name:'United States', flag:'\uD83C\uDDFA\uD83C\uDDF8', lang:'en' },
+      { code:'gb', name:'United Kingdom', flag:'\uD83C\uDDEC\uD83C\uDDE7', lang:'en' },
+      { code:'ca', name:'Canada', flag:'\uD83C\uDDE8\uD83C\uDDE6', lang:'en' },
+      { code:'de', name:'Germany', flag:'\uD83C\uDDE9\uD83C\uDDEA', lang:'de' },
+      { code:'ru', name:'Russia', flag:'\uD83C\uDDF7\uD83C\uDDFA', lang:'ru' },
+      { code:'es', name:'Spain', flag:'\uD83C\uDDEA\uD83C\uDDF8', lang:'es' },
+      { code:'mx', name:'Mexico', flag:'\uD83C\uDDF2\uD83C\uDDFD', lang:'es' },
+      { code:'jp', name:'Japan', flag:'\uD83C\uDDEF\uD83C\uDDF5', lang:'ja' },
+      { code:'kr', name:'South Korea', flag:'\uD83C\uDDF0\uD83C\uDDF7', lang:'ko' },
+      { code:'fr', name:'France', flag:'\uD83C\uDDEB\uD83C\uDDF7', lang:'en' },
+      { code:'other', name:'Other / International', flag:'\uD83C\uDF10', lang:'en' }
+    ];
+
+    const translations = {
+      en: { nav_list:'Demonlist', nav_stats:'Stats Viewer', nav_roulette:'Roulette', nav_submit:'Submit', nav_catalog:'Catalog', nav_audit:'Audit & Bans', nav_logout_staff:'Logout Staff', login:'Player Login', login_title:'Player Login / Register', username:'Username', email:'Email', password:'Password', country:'Country', signin:'Sign In / Create Account', cancel:'Cancel', search:'Search by name, creator, or enjoyment...', welcome:'Welcome', logout:'Log Out' },
+      de: { nav_list:'Demonliste', nav_stats:'Statistiken', nav_roulette:'Roulette', nav_submit:'Einreichen', nav_catalog:'Katalog', nav_audit:'Audit & Sperren', nav_logout_staff:'Team-Logout', login:'Spieler-Login', login_title:'Spieler-Login / Registrieren', username:'Benutzername', email:'E-Mail', password:'Passwort', country:'Land', signin:'Anmelden / Konto erstellen', cancel:'Abbrechen', search:'Suche nach Name, Ersteller oder Bewertung...', welcome:'Willkommen', logout:'Abmelden' },
+      ru: { nav_list:'\u0414\u0435\u043c\u043e\u043d\u043b\u0438\u0441\u0442', nav_stats:'\u0421\u0442\u0430\u044
