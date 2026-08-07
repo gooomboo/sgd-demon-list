@@ -2,43 +2,90 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Inline, unblocked script: sets the theme BEFORE the page paints, so there's no flash of the wrong theme -->
-  <script>
-    (function () {
-      if (localStorage.getItem('demonlist_theme') === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-      }
-    })();
-  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Demonlist</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <div class="navbar">
-    <div class="nav-tabs">
-      <button class="nav-btn active" id="tab-list" onclick="switchTab('list')">Demonlist</button>
-      <button class="nav-btn" id="tab-stats" onclick="switchTab('stats')">Stats Viewer</button>
-      <button class="nav-btn" id="tab-roulette" onclick="switchTab('roulette')">Roulette</button>
-      <button class="nav-btn" id="tab-moderators" onclick="switchTab('moderators')">Moderators</button>
-      <a class="nav-btn" id="submitFormBtn" href="https://forms.google.com/REPLACE_WITH_YOUR_FORM_LINK" target="_blank" rel="noopener">Submit a Record</a>
-    </div>
-    <div class="nav-tools">
-      <button id="themeToggleBtn" class="icon-btn" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
-      <label class="icon-btn" title="Choose a background song file">
-        🎵
-        <input type="file" id="musicFileInput" accept="audio/*" style="display:none;">
-      </label>
-      <button id="musicPlayBtn" class="icon-btn" onclick="toggleMusicPlay()" disabled title="Play / pause">▶️</button>
-      <button id="muteBtn" class="icon-btn" onclick="toggleMute()" title="Mute / unmute">🔊</button>
+  <div class="navbar" id="navbar">
+    <button class="nav-btn active" data-i18n="nav_list" onclick="switchTab('list')">Demonlist</button>
+    <button class="nav-btn" data-i18n="nav_stats" onclick="switchTab('leaderboard')">Stats Viewer</button>
+    <button class="nav-btn" data-i18n="nav_roulette" onclick="switchTab('roulette')">Roulette</button>
+    <button class="nav-btn" data-i18n="nav_submit" onclick="switchTab('submit')">Submit</button>
+    <button class="nav-btn" data-i18n="nav_catalog" onclick="switchTab('catalog')">Catalog</button>
+    <button class="nav-btn nav-item-mod" data-i18n="nav_audit" onclick="switchTab('audit')">Audit & Bans</button>
+    <button class="nav-btn nav-item-mod" data-i18n="nav_logout_staff" onclick="logoutStaff()">Logout Staff</button>
+
+    <select id="langSwitcher" class="nav-btn" style="border:1px solid var(--border); border-radius:4px; padding:4px 6px; cursor:pointer; text-transform:none; letter-spacing:normal;" onchange="setLanguage(this.value)">
+      <option value="en">🇺🇸 EN</option>
+      <option value="de">🇩🇪 DE</option>
+      <option value="ru">🇷🇺 RU</option>
+      <option value="es">🇪🇸 ES</option>
+      <option value="ja">🇯🇵 JA</option>
+      <option value="ko">🇰🇷 KO</option>
+    </select>
+
+    <a href="#" target="_blank" id="discordBtn" title="Join our Discord" style="display:flex; align-items:center; padding:0 4px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#5865F2"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.076.076 0 0 0-.04.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.029 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.176 1.094 2.157 2.418 0 1.334-.955 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.176 1.094 2.157 2.418 0 1.334-.946 2.419-2.157 2.419z"/></svg>
+    </a>
+
+    <div class="user-status" id="userStatus">
+       <button class="nav-btn" onclick="openPlayerLogin()">Player Login</button>
     </div>
   </div>
 
-  <audio id="bg-music" loop></audio>
-
   <div class="container">
-    <div id="contentContainer"><p style="text-align:center;color:var(--text-muted);">Loading demonlist...</p></div>
+    <div id="contentContainer"></div>
+  </div>
+
+  <div class="modal" id="playerLoginModal">
+    <div class="modal-content">
+      <h2 style="margin-top:0;" data-i18n="login_title">Player Login / Register</h2>
+      <p style="color:var(--text-muted); font-size:0.85rem;">New accounts require an email and password to prevent spam and protect your account. You'll be added to the Stats Viewer automatically.</p>
+      <div class="form-group"><label data-i18n="username">Username</label><input type="text" id="playerName" placeholder="Enter username"></div>
+      <div class="form-group"><label data-i18n="email">Email (new accounts only)</label><input type="email" id="playerEmail" placeholder="Enter email"></div>
+      <div class="form-group"><label data-i18n="password">Password</label><input type="password" id="playerPass" placeholder="Enter password"></div>
+      <div class="form-group"><label data-i18n="country">Country (new accounts only)</label><select id="playerCountry"></select></div>
+      <button class="btn btn-primary" style="width:100%" onclick="loginPlayer()" data-i18n="signin">Sign In / Create Account</button>
+      <button class="btn" style="width:100%; margin-top:10px;" onclick="closeModal('playerLoginModal')" data-i18n="cancel">Cancel</button>
+    </div>
+  </div>
+
+  <div class="modal" id="loginModal">
+    <div class="modal-content">
+      <h2 style="margin-top:0;">Staff Authentication</h2>
+      <div class="form-group"><label>Passcode</label><input type="password" id="modSecret" placeholder="Enter password"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="verifyMod()">Sign In</button>
+      <button class="btn" style="width:100%; margin-top:10px;" onclick="closeModal('loginModal')">Cancel</button>
+    </div>
+  </div>
+
+  <div class="modal" id="levelFormModal">
+    <div class="modal-content">
+      <h2 style="margin-top:0;" id="levelFormTitle">Add Level</h2>
+      <div class="form-group"><label>Insert at Rank #</label><input type="number" id="lfRank" min="1"></div>
+      <div class="form-group"><label>Name</label><input type="text" id="lfName"></div>
+      <div class="form-group"><label>Publisher</label><input type="text" id="lfPublisher"></div>
+      <div class="form-group"><label>Verifier</label><input type="text" id="lfVerifier"></div>
+      <div class="form-group"><label>Creators</label><input type="text" id="lfCreators"></div>
+      <div class="form-group"><label>Length</label><input type="text" id="lfLength" placeholder="e.g. 2m:12s"></div>
+      <div class="form-group"><label>Engine</label><input type="text" id="lfEngine" placeholder="e.g. 2.2"></div>
+      <div class="form-group"><label>Required %</label><input type="number" id="lfReq" min="1" max="100"></div>
+      <div class="form-group"><label>Thumbnail / Image URL</label><input type="text" id="lfImage"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="saveLevelForm()">Save Level</button>
+      <button class="btn" style="width:100%;margin-top:10px;" onclick="closeModal('levelFormModal')">Cancel</button>
+    </div>
+  </div>
+
+  <div class="modal" id="timeMachineModal">
+    <div class="modal-content">
+      <h2 style="margin-top:0;">🕐 Time Machine</h2>
+      <p style="color:var(--text-muted); font-size:0.85rem;">View the Demonlist as it looked at an earlier point. This only reflects changes made in this browser.</p>
+      <div class="form-group"><label>Destination</label><input type="datetime-local" id="tmDateInput"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="goToTime()">Go!</button>
+      <button class="btn" style="width:100%; margin-top:10px;" onclick="closeModal('timeMachineModal')">Cancel</button>
+    </div>
   </div>
 
   <script src="app.js"></script>
