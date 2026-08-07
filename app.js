@@ -1,12 +1,12 @@
 /* ============================================================
-   GEOMETRY DASH DEMON LIST — app.js
+   DEMONLIST — app.js
    ============================================================ */
 
 let siteData = { levels: [], moderators: [] };
 let currentTab = 'list';
-let roulette = { active: false, currentIdx: null, streak: 0, hardestIdx: null, cleared: false };
+let roulette = { active: false, currentIdx: null, streak: 0, hardestIdx: null };
 
-// ---------- Load Data from data.json ----------
+// ---------- Load data.json ----------
 async function loadData() {
   try {
     const res = await fetch('data.json', { cache: 'no-store' });
@@ -15,12 +15,9 @@ async function loadData() {
     if (!siteData.levels) siteData.levels = [];
     if (!siteData.moderators) siteData.moderators = [];
   } catch (err) {
-    document.getElementById('contentContainer').innerHTML = `
-      <div class="detail-view" style="text-align:center;">
-        <h3 style="color:var(--accent-blue);">Notice Regarding Local Preview</h3>
-        <p style="color:var(--text-muted);">Browsers block direct file viewing via <code>fetch()</code> unless running a local server (like VS Code Live Server) or hosted on GitHub Pages.</p>
-        <p style="color:var(--text-muted);">Error detail: ${err.message}</p>
-      </div>`;
+    document.getElementById('contentContainer').innerHTML =
+      '<p style="text-align:center;color:var(--text-muted);">Could not load data.json (' + err.message + '). ' +
+      'If you just opened this file directly from your computer, you must run a local server or push to GitHub Pages to test it.</p>';
     return;
   }
   render();
@@ -41,7 +38,7 @@ function switchTab(tab) {
   render();
 }
 
-// ---------- Automated Scoring & Enjoyment Calculations ----------
+// ---------- Scoring & Enjoyment Logic ----------
 function getPoints(rank, percent, reqPercent) {
   const base = rank === 1 ? 350 : rank === 2 ? 331.71 : Math.max(5, 300 * Math.exp(-0.03 * rank));
   if (percent >= 100) return base;
@@ -51,77 +48,77 @@ function getPoints(rank, percent, reqPercent) {
 }
 
 function avgEnjoyment(level) {
-  const vals = (level.records || []).map(r => Number(r.enjoyment)).filter(v => !isNaN(v) && v > 0);
+  const vals = (level.records || []).map(r => Number(r.enjoyment)).filter(v => !isNaN(v));
   if (!vals.length) return 'N/A';
   return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) + '/10';
 }
 
-// ---------- Tab 1: Demonlist ----------
+// ---------- Tab: Demonlist ----------
 function renderList() {
   const container = document.getElementById('contentContainer');
   let html = '<input type="text" id="listSearch" class="search-bar" placeholder="Search by name or creator..." oninput="filterList(this.value)">';
 
   siteData.levels.forEach((level, idx) => {
     const rank = idx + 1;
-    const pts100 = getPoints(rank, 100, level.reqPercent).toFixed(2);
-    const ptsReq = getPoints(rank, level.reqPercent, level.reqPercent).toFixed(2);
-    
     html += `
       <div class="level-card list-item" data-search="${(level.name + ' ' + level.creator).toLowerCase()}" onclick="openLevel(${idx})">
-        <img src="images/${level.image}" class="card-banner" alt="${level.name}" onerror="this.src='https://via.placeholder.com/200x120?text=No+Image'">
+        <img src="images/${level.image}" class="card-banner" alt="${level.name}" onerror="this.src='https://via.placeholder.com/600x220?text=No+Image'">
         <div class="card-info">
-          <h2 class="card-title"><span class="rank">#${rank}</span> &ndash; ${level.name}</h2>
-          <p class="card-author">by <b>${level.creator}</b> &bull; Enjoyment: <b>${avgEnjoyment(level)}</b></p>
-          <p class="card-points">${ptsReq} pts (${level.reqPercent}%) &mdash; ${pts100} pts (100%)</p>
+          <h2 class="card-title"><span class="rank">#${rank}</span> \u2013 ${level.name}</h2>
+          <p class="card-author">by <b>${level.creator}</b> &middot; Avg Enjoyment: <b>${avgEnjoyment(level)}</b></p>
+          <p class="card-points">${getPoints(rank, level.reqPercent, level.reqPercent).toFixed(2)} pts (${level.reqPercent}%) \u2014 ${getPoints(rank, 100, level.reqPercent).toFixed(2)} pts (100%)</p>
         </div>
       </div>`;
   });
-  container.innerHTML = html || '<p style="text-align:center;color:var(--text-muted);">No levels added yet.</p>';
+  container.innerHTML = html || '<p style="text-align:center;color:var(--text-muted);">No levels yet.</p>';
 }
 
 function filterList(val) {
   document.querySelectorAll('.list-item').forEach(row => {
-    row.style.display = row.dataset.search.includes(val.toLowerCase()) ? 'flex' : 'none';
+    row.style.display = row.dataset.search.includes(val.toLowerCase()) ? 'block' : 'none';
   });
 }
 
 function openLevel(idx) {
   const level = siteData.levels[idx];
   const rank = idx + 1;
-  const sortedRecords = (level.records || []).slice().sort((a, b) => b.percent - a.percent);
-  
-  const recordsHTML = sortedRecords.map(r => `
-    <tr>
-      <td><b>${r.player}</b></td>
-      <td style="text-align:right;">${r.percent}% &nbsp;(${r.enjoyment != null ? r.enjoyment : '?'}/10)${r.link ? ' <a href="' + r.link + '" target="_blank">🔗</a>' : ''}</td>
-    </tr>`).join('');
+  const recordsHTML = (level.records || [])
+    .slice()
+    .sort((a, b) => b.percent - a.percent)
+    .map(r => `
+      <tr>
+        <td>${r.player}</td>
+        <td style="text-align:right;">${r.percent}% (${r.enjoyment != null ? r.enjoyment : '?'}/10)${r.link ? ' <a href="' + r.link + '" target="_blank">\uD83D\uDD17</a>' : ''}</td>
+      </tr>`).join('');
 
   document.getElementById('contentContainer').innerHTML = `
     <div class="detail-view">
       <div class="detail-header">
-        <h1>${level.name} <span onclick="switchTab('list')">✕ Close</span></h1>
-        <div class="detail-subtitle">Created by ${level.creator} &bull; Verified by ${level.verifier}</div>
+        <h1>${level.name} <span onclick="switchTab('list')">\u2716</span></h1>
+        <div class="detail-subtitle">by ${level.creator}, verified by ${level.verifier}</div>
       </div>
-      <img class="card-image" src="images/${level.image}" alt="${level.name}" onerror="this.src='https://via.placeholder.com/550x300?text=No+Image'">
+      <img class="card-image" src="images/${level.image}" alt="${level.name}" onerror="this.src='https://via.placeholder.com/600x220?text=No+Image'">
       <div class="stats-grid">
         <div class="stat-box"><h4>Rank</h4><p>#${rank}</p></div>
         <div class="stat-box"><h4>Required %</h4><p>${level.reqPercent}%</p></div>
         <div class="stat-box"><h4>Avg Enjoyment</h4><p>${avgEnjoyment(level)}</p></div>
-        <div class="stat-box"><h4>Victors</h4><p>${sortedRecords.length}</p></div>
+        <div class="stat-box"><h4>Total Records</h4><p>${(level.records || []).length}</p></div>
       </div>
-      <h2 style="margin-top:20px;">Records</h2>
+      <h2>Records</h2>
       <table class="records-table">
-        <thead><tr><th>Player</th><th style="text-align:right;">Progress & Enjoyment</th></tr></thead>
-        <tbody>${recordsHTML || '<tr><td colspan="2" style="text-align:center;color:var(--text-muted);">No records recorded yet.</td></tr>'}</tbody>
+        <thead><tr><th>Player</th><th style="text-align:right;">Progress</th></tr></thead>
+        <tbody>${recordsHTML || '<tr><td colspan="2">No records yet.</td></tr>'}</tbody>
       </table>
     </div>`;
 }
 
-// ---------- Tab 2: Stats Viewer (Automated Scoring & Player Purging) ----------
+// ---------- Tab: Stats Viewer (Automated Logic) ----------
 function renderStats() {
   const container = document.getElementById('contentContainer');
   const totals = {};
 
+  // Auto-calculates players based purely on level records.
+  // If a player has 0 records/points, they naturally do not appear here.
   siteData.levels.forEach((level, idx) => {
     const rank = idx + 1;
     if (level.verifier) {
@@ -132,14 +129,13 @@ function renderStats() {
     });
   });
 
-  // Automatically purges players who have 0 points or records
   const sorted = Object.entries(totals).filter(p => p[1] > 0).sort((a, b) => b[1] - a[1]);
   
-  let html = '<div class="detail-view"><h2 style="margin-top:0;">Leaderboard</h2><input type="text" class="search-bar" placeholder="Search player..." oninput="filterStats(this.value)">';
+  let html = '<div class="detail-view"><h2 style="margin-top:0;">Stats Viewer</h2><input type="text" class="search-bar" placeholder="Search player..." oninput="filterStats(this.value)">';
   sorted.forEach(([name, pts], i) => {
-    html += `<div class="lb-row" data-search="${name.toLowerCase()}"><div style="width:40px;font-weight:bold;color:var(--accent-blue);">#${i + 1}</div><div class="lb-name">${name}</div><div style="color:var(--text-muted);">${pts.toFixed(2)} pts</div></div>`;
+    html += `<div class="lb-row" data-search="${name.toLowerCase()}"><div style="width:40px;font-weight:bold;color:var(--accent);">#${i + 1}</div><div class="lb-name">${name}</div><div style="color:var(--text-muted);">${pts.toFixed(2)} pts</div></div>`;
   });
-  if (!sorted.length) html += '<p style="color:var(--text-muted); text-align:center;">No player records found.</p>';
+  if (!sorted.length) html += '<p style="color:var(--text-muted);">No records yet.</p>';
   container.innerHTML = html + '</div>';
 }
 
@@ -149,31 +145,29 @@ function filterStats(val) {
   });
 }
 
-// ---------- Tab 3: Moderators ----------
+// ---------- Tab: Moderators ----------
 function renderModerators() {
   const container = document.getElementById('contentContainer');
-  let html = '<div class="detail-view"><h2 style="margin-top:0;">List Staff</h2>';
+  let html = '<div class="detail-view"><h2 style="margin-top:0;">Moderators</h2>';
   siteData.moderators.forEach(m => {
     html += `<div class="mod-card"><span class="mod-name">${m.name}</span><span class="mod-role">${m.role}</span></div>`;
   });
-  if (!siteData.moderators.length) html += '<p style="color:var(--text-muted);">No moderators listed.</p>';
+  if (!siteData.moderators.length) html += '<p style="color:var(--text-muted);">No moderators listed yet.</p>';
   container.innerHTML = html + '</div>';
 }
 
-// ---------- Tab 4: Accurate Demon Roulette ----------
+// ---------- Tab: Accurate Demon Roulette ----------
 function startRoulette() {
   if (!siteData.levels.length) return;
-  roulette = { active: true, currentIdx: Math.floor(Math.random() * siteData.levels.length), streak: 0, hardestIdx: null, cleared: false };
+  roulette = { active: true, currentIdx: Math.floor(Math.random() * siteData.levels.length), streak: 0, hardestIdx: null };
   renderRoulette();
 }
 
 function passRoulette() {
   roulette.streak++;
-  if (roulette.hardestIdx === null || roulette.currentIdx < roulette.hardestIdx) {
-    roulette.hardestIdx = roulette.currentIdx;
-  }
+  if (roulette.hardestIdx === null || roulette.currentIdx < roulette.hardestIdx) roulette.hardestIdx = roulette.currentIdx;
 
-  // Randomly selects from levels strictly harder (lower array index) than the current level
+  // Exact logic: The next level must be ranked higher (lower index number) than the current one.
   const harderPool = [];
   for (let i = 0; i < roulette.currentIdx; i++) harderPool.push(i);
 
@@ -202,13 +196,13 @@ function renderRoulette() {
     const rank = roulette.currentIdx + 1;
     container.innerHTML = `
       <div class="detail-view roulette-box">
-        <div style="color:var(--text-muted); margin-bottom:10px;">Streak: <b style="color:var(--text-main); font-size:1.2rem;">${roulette.streak}</b></div>
+        <div style="color:var(--text-muted);">Current Streak: <b style="color:var(--text-main); font-size:1.2rem;">${roulette.streak}</b></div>
         <div class="roulette-level">
-          <h2 style="margin:0 0 5px 0;"><span style="color:var(--accent-blue);">#${rank}</span> &ndash; ${level.name}</h2>
-          <p style="color:var(--text-muted); margin:0;">by ${level.creator}</p>
+          <h2>#${rank} \u2013 ${level.name}</h2>
+          <p style="color:var(--text-muted);">by ${level.creator}</p>
         </div>
-        <button class="btn btn-primary" onclick="passRoulette()">Passed</button>
-        <button class="btn" onclick="failRoulette()">Failed</button>
+        <button class="btn btn-primary" onclick="passRoulette()">I Passed It</button>
+        <button class="btn" onclick="failRoulette()">I Failed</button>
       </div>`;
     return;
   }
@@ -216,41 +210,42 @@ function renderRoulette() {
   if (roulette.cleared) {
     container.innerHTML = `
       <div class="detail-view roulette-box">
-        <h2 style="color:var(--accent-blue);">🎉 Full Clear!</h2>
-        <p style="color:var(--text-muted);">You cleared the path down to #1! Final streak: <b>${roulette.streak}</b></p>
+        <h1 style="color:var(--accent);">🎉 Full Clear!</h1>
+        <p>You beat every level down to #1. Final streak: <b>${roulette.streak}</b></p>
         <button class="btn btn-primary" onclick="startRoulette()">Play Again</button>
       </div>`;
     return;
   }
 
   if (roulette.streak > 0 || roulette.currentIdx !== null) {
-    const hardest = roulette.hardestIdx !== null ? `#${roulette.hardestIdx + 1} &ndash; ${siteData.levels[roulette.hardestIdx].name}` : 'None';
+    const hardest = roulette.hardestIdx !== null ? `#${roulette.hardestIdx + 1} \u2013 ${siteData.levels[roulette.hardestIdx].name}` : 'None';
     container.innerHTML = `
       <div class="detail-view roulette-box">
-        <h2 style="color:var(--accent-blue);">Run Ended</h2>
-        <p style="color:var(--text-muted);">Final Streak: <b>${roulette.streak}</b> &bull; Hardest Reached: <b>${hardest}</b></p>
-        <button class="btn btn-primary" onclick="startRoulette()">Try Again</button>
+        <h1 style="color:var(--accent);">Run Over</h1>
+        <p>Final streak: <b>${roulette.streak}</b> &middot; Hardest beaten: <b>${hardest}</b></p>
+        <button class="btn btn-primary" onclick="startRoulette()">Play Again</button>
       </div>`;
     return;
   }
 
   container.innerHTML = `
     <div class="detail-view roulette-box">
-      <h2 style="color:var(--accent-blue); margin-top:0;">Demon Roulette</h2>
-      <p style="color:var(--text-muted); max-width:500px; margin:0 auto 20px auto;">A random level is chosen. Pass it to proceed to a harder random level. One fail ends your run.</p>
-      <button class="btn btn-primary" onclick="startRoulette()">Start Roulette</button>
+      <h1 style="color:var(--accent);">Demon Roulette</h1>
+      <p style="color:var(--text-muted);">You will be given a random level. If you beat it, your next level will randomly be selected from a harder rank. One fail ends the run.</p>
+      <button class="btn btn-primary" style="margin-top:20px;" onclick="startRoulette()">Start Roulette</button>
     </div>`;
 }
 
-// ---------- Persistent Dark / Light Mode ----------
+// ---------- Dark / Light mode (Persistent) ----------
 function initTheme() {
-  const saved = localStorage.getItem('demonlist_theme');
-  if (saved === 'light') {
+  const savedTheme = localStorage.getItem('demonlist_theme');
+  if (savedTheme === 'light') {
     document.documentElement.removeAttribute('data-theme');
   } else {
+    // Default to dark mode
     document.documentElement.setAttribute('data-theme', 'dark');
   }
-  updateThemeIcon();
+  updateThemeButton();
 }
 
 function toggleTheme() {
@@ -262,49 +257,49 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-theme', 'dark');
     localStorage.setItem('demonlist_theme', 'dark');
   }
-  updateThemeIcon();
+  updateThemeButton();
 }
 
-function updateThemeIcon() {
+function updateThemeButton() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   document.getElementById('themeToggleBtn').textContent = isDark ? '☀️' : '🌙';
 }
 
-// ---------- Persistent Audio System (IndexedDB Storage) ----------
-const AUDIO_DB = 'dashAudioStoreDB';
-const AUDIO_STORE = 'files';
-const AUDIO_KEY = 'bgSong';
+// ---------- Background music (Persistent via IndexedDB) ----------
+const MUSIC_DB_NAME = 'demonlistMusicDB';
+const MUSIC_STORE = 'files';
+const MUSIC_KEY = 'bgMusic';
 
-function openAudioDB() {
+function openMusicDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(AUDIO_DB, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(AUDIO_STORE);
+    const req = indexedDB.open(MUSIC_DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(MUSIC_STORE);
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
 
-async function saveAudioFile(file) {
-  const db = await openAudioDB();
+async function saveMusicFile(file) {
+  const db = await openMusicDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(AUDIO_STORE, 'readwrite');
-    tx.objectStore(AUDIO_STORE).put(file, AUDIO_KEY);
+    const tx = db.transaction(MUSIC_STORE, 'readwrite');
+    tx.objectStore(MUSIC_STORE).put(file, MUSIC_KEY);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
 }
 
-async function getStoredAudioFile() {
-  const db = await openAudioDB();
+async function loadMusicFile() {
+  const db = await openMusicDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(AUDIO_STORE, 'readonly');
-    const req = tx.objectStore(AUDIO_STORE).get(AUDIO_KEY);
+    const tx = db.transaction(MUSIC_STORE, 'readonly');
+    const req = tx.objectStore(MUSIC_STORE).get(MUSIC_KEY);
     req.onsuccess = () => resolve(req.result || null);
     req.onerror = () => reject(req.error);
   });
 }
 
-function setAudioSource(file) {
+function setupAudioFromFile(file) {
   const audioEl = document.getElementById('bg-music');
   audioEl.src = URL.createObjectURL(file);
   document.getElementById('musicPlayBtn').disabled = false;
@@ -313,12 +308,12 @@ function setAudioSource(file) {
 function toggleMusicPlay() {
   const audioEl = document.getElementById('bg-music');
   const btn = document.getElementById('musicPlayBtn');
-  if (audioEl.paused) {
-    audioEl.play().catch(e => console.warn("Playback interaction required"));
-    btn.textContent = '⏸️';
-  } else {
-    audioEl.pause();
-    btn.textContent = '▶️';
+  if (audioEl.paused) { 
+    audioEl.play(); 
+    btn.textContent = '⏸️'; 
+  } else { 
+    audioEl.pause(); 
+    btn.textContent = '▶️'; 
   }
 }
 
@@ -329,7 +324,7 @@ function toggleMute() {
   document.getElementById('muteBtn').textContent = audioEl.muted ? '🔇' : '🔊';
 }
 
-async function initMusicSystem() {
+async function initMusic() {
   const audioEl = document.getElementById('bg-music');
   audioEl.muted = localStorage.getItem('demonlist_muted') === 'true';
   document.getElementById('muteBtn').textContent = audioEl.muted ? '🔇' : '🔊';
@@ -337,25 +332,21 @@ async function initMusicSystem() {
   document.getElementById('musicFileInput').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    await saveAudioFile(file);
-    setAudioSource(file);
+    await saveMusicFile(file);
+    setupAudioFromFile(file);
     audioEl.play();
     document.getElementById('musicPlayBtn').textContent = '⏸️';
   });
 
   try {
-    const savedFile = await getStoredAudioFile();
-    if (savedFile) {
-      setAudioSource(savedFile);
-    }
-  } catch (err) {
-    console.warn("IndexedDB audio storage unavailable.");
-  }
+    const file = await loadMusicFile();
+    if (file) setupAudioFromFile(file);
+  } catch (e) { console.warn("Audio storage not supported."); }
 }
 
-// ---------- Initialization ----------
+// ---------- Init ----------
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  initMusicSystem();
+  initMusic();
   loadData();
 });
