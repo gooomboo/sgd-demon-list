@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demonlist</title>
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --card-bg: #ffffff;
+      --text-main: #333333;
+      --text-muted: #777777;
+      --border: #e0e0e0;
+      --accent-blue: #0078d7;
+      --hover-blue: #005a9e;
+      --header-bg: #ffffff;
+      --record-bg: #0088cc;
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-stack);
+      background-color: var(--bg);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .navbar {
+      width: 100%;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 15px 20px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .nav-btn {
+      background: none;
+      color: var(--text-muted);
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: color 0.2s;
+      font-family: inherit;
+      text-decoration: none;
+    }
+
+    .nav-btn.active, .nav-btn:hover { color: var(--text-main); }
+
+    .container { width: 100%; max-width: 900px; padding: 30px 15px; }
+
+    /* Cards & Lists */
+    .level-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .level-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .card-banner { width: 100%; height: 220px; object-fit: cover; border-bottom: 1px solid var(--border); }
+    .card-info { padding: 15px 20px; }
+    .card-title { font-size: 1.5rem; font-weight: 700; margin: 0 0 5px 0; }
+    .card-author { font-size: 1rem; color: var(--text-main); margin: 0 0 5px 0; }
+    .card-points { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+
+    .detail-view { display: none; background: var(--card-bg); padding: 30px; border: 1px dashed var(--border); border-radius: 4px; }
+    .detail-header { text-align: center; margin-bottom: 20px; }
+    .detail-header h1 { font-size: 2.2rem; margin: 0 0 10px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .detail-header h1 span { font-size: 1.2rem; color: var(--text-muted); cursor: pointer; }
+    .detail-subtitle { font-size: 1.05rem; font-weight: 600; line-height: 1.6; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+
+    .video-container { width: 100%; max-width: 600px; margin: 0 auto 30px auto; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+    .video-container img { width: 100%; display: block; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: center; margin-bottom: 30px; }
+    .stat-box h4 { margin: 0 0 5px 0; font-size: 1rem; color: var(--text-main); }
+    .stat-box p { margin: 0; font-size: 0.95rem; color: var(--text-muted); }
+
+    /* Tables */
+    .records-table, .catalog-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .records-table th, .catalog-table th { background: var(--record-bg); color: white; padding: 12px; text-align: left; }
+    .records-table td, .catalog-table td { padding: 12px; border-bottom: 1px solid var(--border); }
+    .player-link { cursor: pointer; color: var(--text-main); text-decoration: none; border-bottom: 1px dotted var(--text-main); }
+
+    /* Forms and Inputs */
+    .search-bar { width: 100%; padding: 12px 15px; font-size: 1rem; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 20px; outline: none; font-family: inherit; }
+    .lb-row { display: flex; align-items: center; padding: 12px 15px; border-bottom: 1px solid var(--border); background: var(--card-bg); }
+    .lb-row:nth-child(even) { background: #f9f9f9; }
+    .lb-name { flex-grow: 1; cursor: pointer; font-weight: 600; border-bottom: 1px dotted transparent; margin-left: 15px; }
+    .lb-name:hover { border-bottom-color: var(--text-main); }
+
+    .btn { background: var(--card-bg); border: 1px solid var(--border); padding: 10px 20px; font-size: 1rem; font-weight: 600; cursor: pointer; border-radius: 4px; transition: 0.2s; font-family: inherit; }
+    .btn:hover { background: #f0f0f0; }
+    .btn-primary { background: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+    .btn-primary:hover { background: var(--hover-blue); }
+    .btn-danger { background: #d9534f; color: white; border-color: #d9534f; }
+
+    .form-group { margin-bottom: 15px; text-align: left; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
+    .form-group input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-family: inherit; max-width: 300px; }
+  </style>
+</head>
+<body>
+
+  <div class="navbar" id="navbar">
+    <button class="nav-btn active" onclick="switchTab('list')">Demonlist</button>
+    <button class="nav-btn" onclick="switchTab('leaderboard')">Stats Viewer</button>
+    <button class="nav-btn" onclick="switchTab('roulette')">Roulette</button>
+    <button class="nav-btn" onclick="switchTab('catalog')">Catalog</button>
+    
+    <a href="https://forms.google.com/YOUR_LINK_HERE" target="_blank" class="nav-btn" style="color: var(--accent-blue);">Submit Record</a>
+  </div>
+
+  <div class="container">
+    <div id="contentContainer"></div>
+  </div>
+
+  <script>
+    // ==============================================================================
+    // 🎮 LEVEL DATABASE (EDIT THIS TO ADD LEVELS)
+    // To add a new level, copy one of the blocks below, paste it, and edit the info.
+    // The list is ordered from top to bottom (Top 1 is the first block).
+    // ==============================================================================
+    const db = [
+      {
+        name: "Society", 
+        publisher: "Neomarbilan", 
+        verifier: "[WBT] wPopoff", 
+        creators: "Neomarbilan and more",
+        length: "2m:12s", 
+        difficulty: "Extreme Demon", 
+        engine: "2.2", 
+        reqPercent: 66,
+        image: "https://i.ytimg.com/vi/613Y-2m96B8/maxresdefault.jpg",
+        records: [
+          // Edit the records inside these brackets
+          { player: "[WBT] wPopoff", percent: 100, enjoyment: 8, link: "https://youtube.com/..." },
+          { player: "[TCD] Trick", percent: 100, enjoyment: 9, link: "https://youtube.com/..." }
+        ]
+      },
+      {
+        name: "Thinking Space II", 
+        publisher: "CairoX", 
+        verifier: "Zoink", 
+        creators: "CairoX",
+        length: "2m:30s", 
+        difficulty: "Extreme Demon", 
+        engine: "2.1", 
+        reqPercent: 79,
+        image: "https://i.ytimg.com/vi/D1B-kX7pS8A/maxresdefault.jpg",
+        records: [ 
+          { player: "Zoink", percent: 100, enjoyment: 4, link: "https://youtube.com/..." } 
+        ]
+      }
+    ];
+
+    // ==============================================================================
+    // 📝 CHANGELOG (EDIT THIS TO ADD HISTORY)
+    // Add new updates to the top of this list so people can see what changed.
+    // ==============================================================================
+    const changelog = [
+      { date: "Current Date", action: "Updated list to use hardcoded format.", type: "System" },
+      { date: "Previous Date", action: "Added Society at #1", type: "Level Update" }
+    ];
+
+    // ==============================================================================
+    // 📜 GUIDELINES (EDIT THIS TO CHANGE YOUR RULES)
+    // ==============================================================================
+    const guidelinesText = `All records must include valid video proof (raw footage required). No cheats, hacks, speedhacks, or unauthorized game modifications are allowed. Submissions must stay within the frame-rate limits set by staff. Be respectful to other members of the community — harassment or cheating can result in a ban.`;
+
+
+    // ==============================================================================
+    // ⚙️ SYSTEM CODE (No need to edit below this line unless you want to change features)
+    // ==============================================================================
+
+    let currentTab = 'list';
+    let roulette = { active: false, summary: false, victory: false, level: null, req: 0, score: 0 };
+
+    // Point Calculation Math
+    function getPoints(rank, percent = 100, reqPercent = 66) {
+      let base = (rank === 1) ? 350.00 : (rank === 2) ? 331.71 : Math.max(5, 300 * Math.exp(-0.03 * rank));
+      if (percent === 100) return base.toFixed(2);
+      if (percent < reqPercent) return "0.00";
+      let partial = base * 0.1 * Math.pow((percent - reqPercent) / (100 - reqPercent), 2);
+      return (Math.max(partial, base * 0.1)).toFixed(2);
+    }
+
+    // Average Enjoyment Math
+    function getEnjoyment(level) {
+      let total = 0, count = 0;
+      level.records.forEach(r => { if(r.enjoyment) { total += Number(r.enjoyment); count++; } });
+      return count > 0 ? (total / count).toFixed(1) + "/10" : "N/A";
+    }
+
+    // Tab Switcher
+    function switchTab(tab) {
+      document.querySelectorAll('.nav-btn').forEach(b => {
+        if (!b.hasAttribute('target')) b.classList.remove('active'); 
+      });
+      try { event.target.classList.add('active'); } catch(e){}
+      
+      currentTab = tab;
+      const container = document.getElementById('contentContainer');
+      container.innerHTML = '';
+
+      if (tab === 'list') renderList();
+      else if (tab === 'leaderboard') renderLeaderboard();
+      else if (tab === 'roulette') renderRoulette();
+      else if (tab === 'catalog') renderCatalog();
+    }
+
+    // --- Tab: Demonlist ---
+    function renderList() {
+      const container = document.getElementById('contentContainer');
+      let html = `<input type="text" id="listSearch" class="search-bar" placeholder="Search by name, creator, or enjoyment..." oninput="filterDemonlist(this.value)">`;
+
+      db.forEach((level, idx) => {
+        const rank = idx + 1;
+        html += `
+          <div class="level-card list-item" data-search="${level.name} ${level.creators} ${getEnjoyment(level)}" onclick="openLevel(${idx})">
+            <img src="${level.image}" class="card-banner">
+            <div class="card-info">
+              <h2 class="card-title">#${rank} – ${level.name}</h2>
+              <p class="card-author">published by <b><u>${level.publisher}</u></b> | Avg Enjoyment: <b>${getEnjoyment(level)}</b></p>
+              <p class="card-points">${getPoints(rank, level.reqPercent, level.reqPercent)} (${level.reqPercent}%) — ${getPoints(rank, 100, level.reqPercent)} (100%) points</p>
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function filterDemonlist(val) {
+      document.querySelectorAll('.list-item').forEach(row => {
+        row.style.display = row.dataset.search.toLowerCase().includes(val.toLowerCase()) ? 'block' : 'none';
+      });
+    }
+
+    function openLevel(idx) {
+      const level = db[idx];
+      let recordsHTML = level.records.sort((a,b) => b.percent - a.percent).map(r => `
+          <tr>
+            <td><a class="player-link" onclick="openPlayer('${r.player}')">${r.player}</a></td>
+            <td style="text-align:right;">${r.percent}% (${r.enjoyment || '?'}/10) <a href="${r.link}" target="_blank">🔗</a></td>
+          </tr>`).join('');
+
+      document.getElementById('contentContainer').innerHTML = `
+        <div class="detail-view" style="display:block;">
+          <div class="detail-header">
+            <h1>${level.name} <span onclick="switchTab('list')">❯</span></h1>
+            <div class="detail-subtitle">by <u>${level.creators}</u>, verified by <a class="player-link" onclick="openPlayer('${level.verifier}')">${level.verifier}</a></div>
+          </div>
+          <div class="video-container"><img src="${level.image}"></div>
+          <div class="stats-grid">
+            <div class="stat-box"><h4>Length</h4><p>${level.length}</p></div>
+            <div class="stat-box"><h4>Difficulty</h4><p>${level.difficulty}</p></div>
+            <div class="stat-box"><h4>Engine</h4><p>${level.engine}</p></div>
+            <div class="stat-box"><h4>Avg Enjoyment</h4><p>${getEnjoyment(level)}</p></div>
+          </div>
+          <div class="records-section">
+            <h2>Records</h2>
+            <table class="records-table">
+              <thead><tr><th>Player</th><th style="text-align:right;">Progress</th></tr></thead>
+              <tbody>${recordsHTML || '<tr><td colspan="2">No records.</td></tr>'}</tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- Tab: Stats Viewer (Leaderboard) ---
+    function renderLeaderboard() {
+      const container = document.getElementById('contentContainer');
+      let html = `<div style="background:var(--card-bg); padding:30px; border:1px solid var(--border);"><h2>Stats Viewer</h2>
+        <input type="text" class="search-bar" placeholder="Search players..." oninput="filterLB(this.value)">`;
+
+      let playerStats = {};
+      
+      // Calculate scores dynamically from the hardcoded DB
+      db.forEach((lvl, idx) => {
+        const rank = idx + 1;
+        if(lvl.verifier) playerStats[lvl.verifier] = (playerStats[lvl.verifier] || 0) + parseFloat(getPoints(rank, 100, lvl.reqPercent));
+        lvl.records.forEach(r => {
+          playerStats[r.player] = (playerStats[r.player] || 0) + parseFloat(getPoints(rank, r.percent, lvl.reqPercent));
+        });
+      });
+
+      let sorted = Object.entries(playerStats).sort((a,b) => b[1] - a[1]);
+      
+      sorted.forEach((p, idx) => {
+        html += `<div class="lb-row"><div style="width:40px; font-weight:bold;">#${idx+1}</div><div class="lb-name" onclick="openPlayer('${p[0]}')">${p[0]}</div><div style="color:var(--text-muted);">${p[1].toFixed(2)} pts</div></div>`;
+      });
+
+      container.innerHTML = html + `</div>`;
+    }
+
+    function filterLB(val) {
+      document.querySelectorAll('.lb-row').forEach(row => {
+        row.style.display = row.querySelector('.lb-name').innerText.toLowerCase().includes(val.toLowerCase()) ? 'flex' : 'none';
+      });
+    }
+
+    function openPlayer(name) {
+      let score = 0, completed = [], hardest = null;
+
+      db.forEach((lvl, idx) => {
+        const rank = idx + 1;
+        let isComplete = false;
+        
+        if (lvl.verifier === name) { 
+          isComplete = true; 
+          score += parseFloat(getPoints(rank, 100, lvl.reqPercent)); 
+        }
+        
+        let record = lvl.records.find(r => r.player === name);
+        if (record) {
+           score += parseFloat(getPoints(rank, record.percent, lvl.reqPercent));
+           if (record.percent === 100) isComplete = true;
+        }
+        
+        if (isComplete) { 
+          completed.push(lvl.name); 
+          if (!hardest) hardest = lvl.name; 
+        }
+      });
+
+      document.getElementById('contentContainer').innerHTML = `
+        <div class="detail-view" style="display:block;">
+          <h1 style="text-align:center;">${name}</h1>
+          <div style="text-align:center; margin-bottom:20px;">Score: <b>${score.toFixed(2)}</b> | Hardest: <b>${hardest || 'None'}</b></div>
+          <div style="text-align:center;">
+             <button class="btn" onclick="switchTab('leaderboard')">Back to Leaderboard</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- Tab: Catalog ---
+    function renderCatalog() {
+      const container = document.getElementById('contentContainer');
+      
+      let html = `<div style="background:var(--card-bg); padding:30px; border:1px solid var(--border); margin-bottom:20px;">
+        <h2>Guidelines</h2>
+        <div style="white-space:pre-wrap; line-height:1.6;">${guidelinesText}</div>
+      </div>`;
+
+      html += `<div style="background:var(--card-bg); padding:30px; border:1px solid var(--border);"><h2>Public Changelog</h2>
+      <table class="catalog-table"><thead><tr><th>Date</th><th>Action</th><th>Type</th></tr></thead><tbody>`;
+
+      changelog.forEach((log) => {
+        html += `<tr><td>${log.date}</td><td>${log.action}</td><td>${log.type}</td></tr>`;
+      });
+      
+      html += `</tbody></table></div>`;
+      container.innerHTML = html;
+    }
+
+    // --- Tab: Roulette ---
+    function startRoulette() {
+      roulette = { active: true, summary: false, victory: false, level: null, req: 0, score: 0 };
+      nextRLevel();
+    }
+
+    function nextRLevel() {
+      roulette.level = db[Math.floor(Math.random() * db.length)];
+      roulette.req = Math.min(100, 10 + roulette.score);
+      renderRoulette();
+    }
+
+    function submitRouletteAttempt() {
+      const input = document.getElementById('rouletteAttempt');
+      const val = parseFloat(input.value);
+      if (isNaN(val) || val < 0 || val > 100) return alert('Enter a valid percent between 0 and 100.');
+      
+      if (val >= roulette.req) {
+        roulette.score += 1;
+        if (roulette.score >= 100) { finishRoulette('victory'); return; }
+        nextRLevel();
+      } else {
+        finishRoulette('fell_short');
+      }
+    }
+
+    function finishRoulette(reason) {
+      roulette.active = false;
+      roulette.summary = true;
+      roulette.victory = (reason === 'victory');
+      renderRoulette();
+    }
+
+    function renderRoulette() {
+      const container = document.getElementById('contentContainer');
+
+      if (roulette.summary) {
+        const headline = roulette.victory ? '🎉 100 Levels Cleared!' : 'Run Over!';
+        container.innerHTML = `
+          <div style="background:var(--card-bg); padding:40px; text-align:center; border:1px solid var(--border);">
+            <h1 style="margin:0 0 10px 0;">${headline}</h1>
+            <div style="background:#f0f8ff; border:1px solid #b6d4fe; padding:20px; text-align:center; margin:20px 0;">
+              <h3>Levels Cleared: ${roulette.score} / 100</h3>
+            </div>
+            <button class="btn btn-primary" onclick="startRoulette()">Play Again</button>
+          </div>`;
+        return;
+      }
+
+      if (!roulette.active || !roulette.level) {
+        container.innerHTML = `<div style="background:var(--card-bg); padding:40px; text-align:center; border:1px solid var(--border);">
+            <h1 style="margin:0 0 10px 0;">Demon Roulette</h1>
+            <p style="color:var(--text-muted);">Random levels, climbing difficulty. Type in the % you reach each round — clear all 100 rounds to complete it!</p>
+            <button class="btn btn-primary" style="margin-top:20px;" onclick="startRoulette()">Start Roulette</button>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div style="background:var(--card-bg); padding:40px; text-align:center; border:1px solid var(--border);">
+          <div style="color:var(--text-muted); margin-bottom:10px;">Levels Cleared: <b>${roulette.score}</b> / 100</div>
+          <div style="background:#f8f9fa; border:1px solid var(--border); padding:30px; margin-bottom:25px;">
+            <h2>${roulette.level.name}</h2>
+            <h1 style="margin:20px 0 0 0; color:var(--accent-blue); font-size:3rem;">${roulette.req}% required</h1>
+          </div>
+          <div class="form-group" style="margin:0 auto 15px auto; display:flex; flex-direction:column; align-items:center;">
+            <label>% You Reached</label>
+            <input type="number" id="rouletteAttempt" min="0" max="100" placeholder="e.g. 78">
+          </div>
+          <button class="btn btn-primary" onclick="submitRouletteAttempt()">Submit Attempt</button>
+          <button class="btn btn-danger" onclick="finishRoulette('banked')">Bank Score & Quit</button>
+        </div>`;
+    }
+
+    // Initialize the page on load
+    renderList();
+  </script>
+</body>
+</html>
