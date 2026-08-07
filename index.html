@@ -16,18 +16,17 @@
       <button class="nav-btn" id="tab-stats" onclick="switchTab('stats')">Stats Viewer</button>
       <button class="nav-btn" id="tab-roulette" onclick="switchTab('roulette')">Roulette</button>
       <button class="nav-btn" id="tab-moderators" onclick="switchTab('moderators')">Moderators</button>
-      
       <a href="YOUR_GOOGLE_FORM_LINK_HERE" target="_blank" class="nav-btn submit-btn">Submit Record</a>
     </div>
 
     <div class="nav-controls">
       <div class="audio-controls">
-        <label for="musicFileInput" class="music-upload-btn" title="Choose song file from device">🎵 Song File</label>
+        <label for="musicFileInput" class="music-upload-btn">🎵 Song File</label>
         <input type="file" id="musicFileInput" accept="audio/*" style="display: none;">
-        <button id="musicPlayBtn" class="icon-btn" onclick="toggleMusicPlay()" title="Play / Pause" disabled>▶️</button>
-        <button id="muteBtn" class="icon-btn" onclick="toggleMute()" title="Mute / Unmute">🔊</button>
+        <button id="musicPlayBtn" class="icon-btn" onclick="toggleMusicPlay()" disabled>▶️</button>
+        <button id="muteBtn" class="icon-btn" onclick="toggleMute()">🔊</button>
       </div>
-      <button id="themeToggleBtn" class="icon-btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌙</button>
+      <button id="themeToggleBtn" class="icon-btn" onclick="toggleTheme()">🌙</button>
     </div>
   </header>
 
