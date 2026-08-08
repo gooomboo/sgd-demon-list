@@ -1,5 +1,13 @@
 {
   "levels": [
+     {
+      "name": "NEW LEVEL NAME",
+      "creator": "CREATOR NAME",
+      "verifier": "VERIFIER NAME",
+      "image": "thumbnail.png",
+      "reqPercent": 100,
+      "records": []
+    },
     {
       "name": "Society",
       "creator": "Neomarbilan",
