@@ -1,1 +1,0 @@
-cd /home/claude/site && rm -f data.json app.js index.html style.css README.md && mkdir -p levels images && ls -la
