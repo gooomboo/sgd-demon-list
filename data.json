@@ -1,0 +1,29 @@
+{
+  "levels": [
+    {
+      "name": "Society",
+      "creator": "Neomarbilan",
+      "verifier": "[WBT] wPopoff",
+      "image": "society.png",
+      "reqPercent": 66,
+      "records": [
+        { "player": "Trick", "percent": 100, "enjoyment": 9 },
+        { "player": "WPopoff", "percent": 100, "enjoyment": 8 }
+      ]
+    },
+    {
+      "name": "Thinking Space II",
+      "creator": "CairoX",
+      "verifier": "CairoX",
+      "image": "thinking-space-2.png",
+      "reqPercent": 79,
+      "records": [
+        { "player": "Zoink", "percent": 100, "enjoyment": 5 }
+      ]
+    }
+  ],
+  "moderators": [
+    { "name": "gooomboo", "role": "List Leader" },
+    { "name": "Username", "role": "Moderator" }
+  ]
+}
