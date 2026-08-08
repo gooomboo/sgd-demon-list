@@ -1,29 +1,5 @@
 [
-  {
-    "name": "Society",
-    "creator": "Neomarbilan",
-    "verifier": "[WBT] wPopoff",
-    "image": "society.png",
-    "reqPercent": 66,
-    "records": [
-      { "player": "[WBT] wPopoff", "percent": 100, "enjoyment": 8, "link": "https://youtube.com/..." },
-      { "player": "[TCD] Trick", "percent": 100, "enjoyment": 9, "link": "https://youtube.com/..." }
-    ]
-  },
-  {
-    "name": "Thinking Space II",
-    "creator": "CairoX",
-    "verifier": "CairoX",
-    "image": "thinking-space-2.png",
-    "reqPercent": 79,
-    "records": [
-      { "player": "Zoink", "percent": 100, "enjoyment": 4, "link": "https://youtube.com/..." }
-    ]
-  }
+  { "name": "goomboo", "role": "List Leader" },
+  { "name": "username", "role": "Moderator" },
+  { "name": "username", "role": "Moderator" }
 ]
-[
-  { "name": "gooomboo", "role": "List Leader" },
-  { "name": "Username Placeholder", "role": "List Moderator" },
-  { "name": "Username Placeholder", "role": "List Helper" }
-]
-
