@@ -21,4 +21,9 @@
     ]
   }
 ]
+[
+  { "name": "gooomboo", "role": "List Leader" },
+  { "name": "Username Placeholder", "role": "List Moderator" },
+  { "name": "Username Placeholder", "role": "List Helper" }
+]
 
