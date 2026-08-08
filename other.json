@@ -1,0 +1,5 @@
+{
+  "returncode" : 0,
+  "stdout" : "total 16\ndrwxr-xr-x 4 root root 4096 Aug  8 02:39 .\ndrwxr-xr-x 8 root root 4096 Aug  7 21:31 ..\ndrwxr-xr-x 2 root root 4096 Aug  8 02:39 images\ndrwxr-xr-x 2 root root 4096 Aug  8 02:39 levels\n",
+  "stderr" : ""
+}
