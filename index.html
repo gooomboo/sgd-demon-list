@@ -2,44 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Inline, unblocked script: sets the theme BEFORE the page paints, so there's no flash of the wrong theme -->
-  <script>
-    (function () {
-      if (localStorage.getItem('demonlist_theme') === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-      }
-    })();
-  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Demonlist</title>
+  
+  <title>Geometry Dash Demon List</title>
+  <meta property="og:title" content="Geometry Dash Demon List">
+  <meta property="og:description" content="The official rankings for the hardest Geometry Dash demon levels.">
+  <meta property="og:image" content="https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPO_NAME/images/thumbnail.png">
+  <meta name="theme-color" content="#0078d7">
+  
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <div class="navbar">
-    <div class="nav-tabs">
+  <header class="navbar">
+    <div class="nav-links">
       <button class="nav-btn active" id="tab-list" onclick="switchTab('list')">Demonlist</button>
       <button class="nav-btn" id="tab-stats" onclick="switchTab('stats')">Stats Viewer</button>
       <button class="nav-btn" id="tab-roulette" onclick="switchTab('roulette')">Roulette</button>
       <button class="nav-btn" id="tab-moderators" onclick="switchTab('moderators')">Moderators</button>
-      <a class="nav-btn" id="submitFormBtn" href="https://forms.google.com/REPLACE_WITH_YOUR_FORM_LINK" target="_blank" rel="noopener">Submit a Record</a>
+      <a href="YOUR_GOOGLE_FORM_LINK_HERE" target="_blank" class="nav-btn submit-btn">Submit Record</a>
     </div>
-    <div class="nav-tools">
-      <button id="themeToggleBtn" class="icon-btn" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
-      <label class="icon-btn" title="Choose a background song file">
-        🎵
-        <input type="file" id="musicFileInput" accept="audio/*" style="display:none;">
-      </label>
-      <button id="musicPlayBtn" class="icon-btn" onclick="toggleMusicPlay()" disabled title="Play / pause">▶️</button>
-      <button id="muteBtn" class="icon-btn" onclick="toggleMute()" title="Mute / unmute">🔊</button>
+
+    <div class="nav-controls">
+      <select id="langSwitcher" class="nav-btn lang-select" onchange="setLanguage(this.value)">
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="zh">中文</option>
+        <option value="hi">हिन्दी</option>
+        <option value="fr">Français</option>
+        <option value="ar">العربية</option>
+        <option value="ru">Русский</option>
+        <option value="pt">Português</option>
+        <option value="de">Deutsch</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+        <option value="it">Italiano</option>
+        <option value="tr">Türkçe</option>
+        <option value="nl">Nederlands</option>
+        <option value="pl">Polski</option>
+        <option value="sv">Svenska</option>
+        <option value="vi">Tiếng Việt</option>
+        <option value="th">ไทย</option>
+        <option value="id">Bahasa Indonesia</option>
+      </select>
+
+      <a href="https://discord.gg/YOUR_SERVER" target="_blank" class="icon-btn" title="Join Discord">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.076.076 0 0 0-.04.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.029 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.176 1.094 2.157 2.418 0 1.334-.955 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.176 1.094 2.157 2.418 0 1.334-.946 2.419-2.157 2.419z"/></svg>
+      </a>
+
+      <button id="themeToggleBtn" class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+        </button>
     </div>
-  </div>
+  </header>
 
-  <audio id="bg-music" loop></audio>
-
-  <div class="container">
-    <div id="contentContainer"><p style="text-align:center;color:var(--text-muted);">Loading demonlist...</p></div>
-  </div>
+  <main class="container">
+    <div id="contentContainer">
+      </div>
+  </main>
 
   <script src="app.js"></script>
 </body>
